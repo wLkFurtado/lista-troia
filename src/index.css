@@ -55,7 +55,9 @@ All colors MUST be HSL.
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Brand tokens */
-    --brand-gold: 51 100% 50%; /* #FFD700 */
+    --brand-gold: 45 90% 55%;
+    --brand-gold-light: 48 100% 70%;
+    --brand-gold-dark: 42 85% 45%;
     --brand-success: 134 61% 41%; /* #28a745 */
     --brand-success-2: 162 72% 46%; /* #20c997 */
     --brand-neutral-700: 0 0% 20%; /* #333333 */

@@ -76,7 +76,7 @@ export const VipForm: React.FC = () => {
               id="name"
               type="text"
               {...register('name')}
-              className="w-[423px] h-[39px] bg-[#D9D9D9] rounded-lg px-4 text-black focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors max-md:w-full max-md:max-w-[380px] max-md:h-[35px] max-sm:w-full max-sm:h-8 max-sm:rounded-md"
+              className="w-full max-w-[420px] h-[42px] bg-[#D9D9D9] rounded-lg px-4 text-black text-center focus:outline-none focus:ring-2 focus:ring-brand-gold focus:bg-white transition-all duration-300 mx-auto block font-medium max-md:h-[38px] max-sm:h-[36px] max-sm:text-sm"
               placeholder="Digite seu nome completo"
               aria-describedby={errors.name ? 'name-error' : undefined}
               aria-invalid={errors.name ? 'true' : 'false'}
@@ -100,7 +100,7 @@ export const VipForm: React.FC = () => {
               id="phone"
               type="tel"
               {...register('phone')}
-              className="w-[423px] h-[39px] bg-[#D9D9D9] rounded-lg px-4 text-black focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-colors max-md:w-full max-md:max-w-[380px] max-md:h-[35px] max-sm:w-full max-sm:h-8 max-sm:rounded-md"
+              className="w-full max-w-[420px] h-[42px] bg-[#D9D9D9] rounded-lg px-4 text-black text-center focus:outline-none focus:ring-2 focus:ring-brand-gold focus:bg-white transition-all duration-300 mx-auto block font-medium max-md:h-[38px] max-sm:h-[36px] max-sm:text-sm"
               placeholder="(11) 99999-9999"
               aria-describedby={errors.phone ? 'phone-error' : undefined}
               aria-invalid={errors.phone ? 'true' : 'false'}
@@ -114,7 +114,7 @@ export const VipForm: React.FC = () => {
 
           <button
             type="submit"
-            className="bg-gradient-to-r from-brand-success to-brand-success2 text-white font-bold py-3 px-8 rounded-lg hover:brightness-110 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-success focus:ring-offset-2 uppercase tracking-wide"
+            className="bg-gradient-to-r from-brand-success to-brand-success2 text-white font-bold py-3.5 px-10 rounded-lg hover:brightness-110 transition-all duration-300 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-brand-success focus:ring-offset-2 uppercase tracking-wide text-lg max-md:py-3 max-md:px-8 max-md:text-base max-sm:py-2.5 max-sm:px-6 max-sm:text-sm"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
             Entrar na Lista VIP
