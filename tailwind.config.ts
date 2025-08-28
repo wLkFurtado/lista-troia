@@ -64,6 +64,8 @@ export default {
 					},
 					brand: {
 						gold: 'hsl(var(--brand-gold))',
+						'gold-light': 'hsl(var(--brand-gold-light))',
+						'gold-dark': 'hsl(var(--brand-gold-dark))',
 						success: 'hsl(var(--brand-success))',
 						success2: 'hsl(var(--brand-success-2))',
 						neutral700: 'hsl(var(--brand-neutral-700))',
