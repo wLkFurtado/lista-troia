@@ -1,5 +1,6 @@
 import React from 'react';
 import { BackgroundImage } from '@/components/BackgroundImage';
+import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 import { GradientText } from '@/components/GradientText';
 import { VipForm } from '@/components/VipForm';
@@ -11,11 +12,13 @@ const Index = () => {
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
-      <main className="max-w-none w-screen h-screen relative overflow-hidden flex flex-col items-center justify-start bg-[#020202] mx-auto p-4 md:p-6 lg:p-8 xl:p-10">
+      <main className="max-w-none w-screen h-screen relative overflow-hidden flex flex-col items-center justify-start bg-[#020202] mx-auto p-4 md:p-5 lg:p-6 xl:p-6">
         <BackgroundImage 
           src="https://api.builder.io/api/v1/image/assets/TEMP/2034ed27cb1fcc6952857351b08f578ffe5590a4?width=4156"
           alt="Background pattern"
         />
+        
+        <AnimatedBackground />
         
         <Logo 
           src="https://api.builder.io/api/v1/image/assets/TEMP/12556187b358de88b421d0ac6400ce3914355c56?width=426"
