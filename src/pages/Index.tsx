@@ -11,7 +11,7 @@ const Index = () => {
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
-      <main className="max-w-none w-screen h-screen relative overflow-hidden flex flex-col items-center justify-start bg-[#020202] mx-auto max-md:max-w-[991px] max-md:h-screen max-md:p-5 max-sm:max-w-screen-sm max-sm:p-4">
+      <main className="max-w-none w-screen h-screen relative overflow-hidden flex flex-col items-center justify-start bg-[#020202] mx-auto p-4 md:p-6 lg:p-8 xl:p-10">
         <BackgroundImage 
           src="https://api.builder.io/api/v1/image/assets/TEMP/2034ed27cb1fcc6952857351b08f578ffe5590a4?width=4156"
           alt="Background pattern"
