@@ -58,17 +58,29 @@ export const VipForm: React.FC = () => {
     addLead<Lead>(payload);
 
     // 2) Também envia para o Supabase (ID gerado pelo banco)
-    void insertLeadSupabase({
-      nome_completo: payload.nome_completo,
-      telefone: payload.telefone,
-      fonte_lead: payload.fonte_lead,
-      utm_source: payload.utm_source,
-      utm_medium: payload.utm_medium,
-      utm_campaign: payload.utm_campaign,
-      data_cadastro: payload.data_cadastro,
-      status: payload.status,
-      data_entrada: payload.data_entrada,
-    });
+    try {
+      const { error } = await insertLeadSupabase({
+        nome_completo: payload.nome_completo,
+        telefone: payload.telefone,
+        fonte_lead: payload.fonte_lead,
+        utm_source: payload.utm_source,
+        utm_medium: payload.utm_medium,
+        utm_campaign: payload.utm_campaign,
+        data_cadastro: payload.data_cadastro,
+        status: payload.status,
+        data_entrada: payload.data_entrada,
+      });
+
+      if (error) {
+        console.error('[Supabase] Falha ao inserir lead:', error);
+        toast.error('Não foi possível salvar no banco. Tente novamente.');
+        return;
+      }
+    } catch (err) {
+      console.error('[Supabase] Erro inesperado ao inserir lead:', err);
+      toast.error('Erro inesperado ao salvar no banco. Tente novamente.');
+      return;
+    }
 
     toast.success('Cadastro realizado com sucesso!');
     setSubmitted(true);

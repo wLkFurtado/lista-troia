@@ -31,9 +31,7 @@ export async function insertLeadSupabase(payload: LeadInsert) {
         utm_campaign: payload.utm_campaign ?? null,
         data_entrada: payload.data_entrada ?? null,
       },
-    ])
-    .select()
-    .maybeSingle();
+    ]);
 
   if (error) {
     console.error("[Supabase] Erro ao inserir lead:", error);
