@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { Lead, LeadStatus } from '@/types/lead'
 import { getLeads, saveLeads, updateLead } from '@/utils/storage'
-
+import { toast } from 'sonner'
+import { updateLeadStatusSupabase } from '@/integrations/supabase/leads'
 function formatPhoneBR(phone: string) {
   const digits = phone.replace(/\D/g, '')
   if (digits.length >= 11) {
@@ -108,13 +109,42 @@ export default function PainelControle() {
     return { today, entered, waiting }
   }, [items])
 
-  function setStatusFor(id: string, next: LeadStatus) {
+  async function setStatusFor(id: string, next: LeadStatus) {
+    const target = items.find((i) => i.id === id)
+    if (!target) return
+
     const now = new Date().toISOString()
+    const nextEntrada = next === 'entrou' ? now : null
+
+    // Otimista: atualiza UI e storage imediatamente
+    const prevItems = items
     const updated = items.map((i) =>
-      i.id === id ? { ...i, status: next, data_entrada: next === 'entrou' ? now : null } : i
+      i.id === id ? { ...i, status: next, data_entrada: nextEntrada } : i
     )
     setItems(updated)
     saveLeads(updated)
+
+    try {
+      const { error } = await updateLeadStatusSupabase({
+        telefone: target.telefone,
+        data_cadastro: target.data_cadastro,
+        status: next,
+        data_entrada: nextEntrada,
+      })
+      if (error) {
+        // Reverte em caso de falha
+        setItems(prevItems)
+        saveLeads(prevItems)
+        toast.error('Falha ao atualizar no banco. Tente novamente.')
+        return
+      }
+      toast.success('Status atualizado!')
+    } catch (err) {
+      console.error('[Supabase] Erro inesperado ao atualizar status:', err)
+      setItems(prevItems)
+      saveLeads(prevItems)
+      toast.error('Erro inesperado ao atualizar. Tente novamente.')
+    }
   }
 
   return (

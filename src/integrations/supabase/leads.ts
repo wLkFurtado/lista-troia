@@ -41,3 +41,39 @@ export async function insertLeadSupabase(payload: LeadInsert) {
   console.log("[Supabase] Lead inserido com sucesso:", data);
   return { data, error: null };
 }
+
+/**
+ * Atualiza o status de um lead usando os campos locais (telefone + data_cadastro) como filtro.
+ * Evita necessidade do ID do banco, que não está disponível no Painel.
+ */
+export async function updateLeadStatusSupabase(params: {
+  telefone: string;
+  data_cadastro: string; // ISO
+  status: "aguardando" | "entrou";
+  data_entrada: string | null; // ISO | null
+}) {
+  const payload: Partial<LeadInsert> = {
+    status: params.status,
+    data_entrada: params.data_entrada ?? null,
+  };
+
+  console.log("[Supabase] Atualizando status do lead...", {
+    telefone: params.telefone,
+    data_cadastro: params.data_cadastro,
+    payload,
+  });
+
+  const { data, error } = await supabase
+    .from("leads")
+    .update(payload)
+    .eq("telefone", params.telefone)
+    .eq("data_cadastro", params.data_cadastro);
+
+  if (error) {
+    console.error("[Supabase] Erro ao atualizar status do lead:", error);
+    return { data: null, error } as const;
+  }
+
+  console.log("[Supabase] Status atualizado com sucesso:", data);
+  return { data, error: null } as const;
+}
