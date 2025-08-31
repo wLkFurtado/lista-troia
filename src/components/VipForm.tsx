@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -7,6 +8,7 @@ import { useUTM } from '@/hooks/useUTM';
 import type { Lead } from '@/types/lead';
 import { addLead } from '@/utils/storage';
 import { ThankYouMessage } from '@/components/ThankYouMessage';
+import { insertLeadSupabase } from '@/integrations/supabase/leads';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
@@ -37,7 +39,7 @@ export const VipForm: React.FC = () => {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = (data: FormData) => {
+  const onSubmit = async (data: FormData) => {
     const now = new Date();
     const payload: Lead = {
       id: uid(),
@@ -52,7 +54,22 @@ export const VipForm: React.FC = () => {
       data_entrada: null,
     };
 
+    // 1) Mantém o comportamento atual (armazenamento local para o Painel)
     addLead<Lead>(payload);
+
+    // 2) Também envia para o Supabase (ID gerado pelo banco)
+    void insertLeadSupabase({
+      nome_completo: payload.nome_completo,
+      telefone: payload.telefone,
+      fonte_lead: payload.fonte_lead,
+      utm_source: payload.utm_source,
+      utm_medium: payload.utm_medium,
+      utm_campaign: payload.utm_campaign,
+      data_cadastro: payload.data_cadastro,
+      status: payload.status,
+      data_entrada: payload.data_entrada,
+    });
+
     toast.success('Cadastro realizado com sucesso!');
     setSubmitted(true);
     reset();
