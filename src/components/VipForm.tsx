@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useUTM } from '@/hooks/useUTM';
 import type { ListaTipo } from '@/types/lead';
 import { insertListaComConvidados, checkDuplicatePhone } from '@/integrations/supabase/leads';
-import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2 } from 'lucide-react';
+import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, Users, CheckCircle2, ChevronRight, Phone } from 'lucide-react';
 
 function applyPhoneMask(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -57,7 +57,6 @@ export const VipForm: React.FC = () => {
       if (allowedDays.includes(dayOfWeek)) {
         if (i === 0) {
           const currentHour = now.getHours();
-          // Até 21:00 inclusive (21:00-21:59 => 21. Se for < 21, então até 20:59. Ajustando para <= 20 pra travar às 21:00.)
           if (currentHour < 21) {
             dates.push(candidate);
           }
@@ -95,12 +94,12 @@ export const VipForm: React.FC = () => {
     setTelefoneError('');
 
     if (nome.trim().length < 2) {
-      setNomeError('Nome deve ter pelo menos 2 caracteres');
+      setNomeError('O nome deve ter pelo menos 2 caracteres');
       valid = false;
     }
     const digits = telefone.replace(/\D/g, '');
     if (digits.length < 10) {
-      setTelefoneError('Telefone deve ter pelo menos 10 dígitos');
+      setTelefoneError('O telefone deve ter pelo menos 10 dígitos');
       valid = false;
     }
     if (valid) {
@@ -111,7 +110,7 @@ export const VipForm: React.FC = () => {
   const handleAddConvidado = () => {
     const name = novoConvidado.trim();
     if (name.length < 2) {
-      toast.error('Nome do convidado deve ter pelo menos 2 caracteres');
+      toast.error('Nome do convidado deve ter pelo menos 2 caracteres', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
       return;
     }
     setConvidados([...convidados, name]);
@@ -135,13 +134,13 @@ export const VipForm: React.FC = () => {
       .map((n) => n.trim())
       .filter((n) => n.length >= 2);
     if (nomes.length === 0) {
-      toast.error('Nenhum nome válido encontrado. Coloque um nome por linha.');
+      toast.error('Nenhum nome válido encontrado. Coloque um nome por linha.', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
       return;
     }
     setConvidados([...convidados, ...nomes]);
     setTextoColar('');
     setInputMode('individual');
-    toast.success(`${nomes.length} nome${nomes.length > 1 ? 's' : ''} adicionado${nomes.length > 1 ? 's' : ''}!`);
+    toast.success(`${nomes.length} nome${nomes.length > 1 ? 's' : ''} adicionado${nomes.length > 1 ? 's' : ''}!`, { style: { background: '#202020', color: '#DAA520', border: '1px solid #DAA520' } });
   };
 
   const handleSubmit = async () => {
@@ -150,7 +149,7 @@ export const VipForm: React.FC = () => {
       const rawPhone = telefone.replace(/\D/g, '');
       const { isDuplicate } = await checkDuplicatePhone(rawPhone);
       if (isDuplicate) {
-        toast.error('Este telefone já possui uma lista cadastrada!');
+        toast.error('Este telefone já possui uma lista cadastrada!', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
         setIsLoading(false);
         return;
       }
@@ -170,73 +169,101 @@ export const VipForm: React.FC = () => {
       );
 
       if (error) {
-        toast.error('Erro ao salvar a lista. Tente novamente.');
+        toast.error('Erro ao salvar a lista. Tente novamente.', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
         return;
       }
 
-      toast.success('Lista criada com sucesso!');
+      toast.success('Lista criada com sucesso!', { style: { background: '#202020', color: '#DAA520', border: '1px solid #DAA520' } });
       setStep('sucesso');
     } catch {
-      toast.error('Erro inesperado. Tente novamente.');
+      toast.error('Erro inesperado. Tente novamente.', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const inputClass = "w-full max-w-[420px] h-[42px] bg-[#D9D9D9] rounded-lg px-4 text-black text-center text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-gold focus:bg-white transition-all duration-300 mx-auto block font-medium";
+  const inputClass = "w-full max-w-[420px] h-[52px] bg-[#111111] border border-[#2A2A2A] rounded-xl px-5 text-white text-base focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all duration-300 mx-auto block font-medium placeholder-gray-500 shadow-inner";
 
   return (
-    <section className="w-[95%] max-w-[560px] bg-white px-4 py-6 rounded-3xl sm:px-6 sm:py-8 md:px-[30px] md:py-[43px] md:rounded-[32px]">
+    <section className="w-[95%] max-w-[560px] bg-[#050505]/90 backdrop-blur-xl border border-[#222] shadow-[0_0_50px_rgba(218,165,32,0.07)] px-5 py-8 rounded-[32px] sm:px-8 sm:py-10 md:px-[40px] md:py-[48px] relative overflow-hidden">
+      
+      {/* Decorative Brand Gradients */}
+      <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-brand-gold/70 to-transparent" />
+      <div className="absolute -top-32 -right-32 w-64 h-64 bg-brand-gold opacity-[0.04] blur-[80px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-brand-gold opacity-[0.04] blur-[80px] rounded-full pointer-events-none" />
+
       {/* ========== STEP: TIPO ========== */}
       {step === 'tipo' && (
-        <div className="flex flex-col items-center gap-5">
-          <h2 className="text-black text-center text-xl sm:text-2xl md:text-[28px] font-bold uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Escolha o tipo da lista
-          </h2>
+        <div className="flex flex-col items-center gap-6 relative z-10 animate-in fade-in zoom-in-95 duration-500">
+          <div className="flex flex-col gap-2 items-center mb-2">
+            <h2 className="text-white text-center text-2xl sm:text-[28px] font-bold uppercase tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Selecione o <span className="text-brand-gold">Tipo</span>
+            </h2>
+            <p className="text-gray-400 text-center text-sm">Escolha o formato da sua lista premium</p>
+          </div>
+
           <button
             onClick={() => handleSelectTipo('aniversario')}
-            className="w-full max-w-[400px] flex items-center justify-center gap-3 bg-gradient-to-r from-pink-500 to-rose-400 text-white font-bold py-4 px-6 rounded-xl hover:brightness-110 transition-all duration-300 transform hover:scale-[1.02] text-base sm:text-lg uppercase tracking-wide"
+            className="group w-full max-w-[400px] flex items-center justify-between bg-gradient-to-br from-[#121212] to-[#181818] border border-[#2A2A2A] hover:border-brand-gold text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg uppercase tracking-wide cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(218,165,32,0.15)]"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            <Cake size={24} />
-            Lista Aniversário
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-[#1A1A1A] rounded-xl border border-[#222] group-hover:border-brand-gold/30 group-hover:text-brand-gold transition-colors duration-300">
+                <Cake size={22} />
+              </div>
+              <span>Aniversário</span>
+            </div>
+            <div className="w-8 h-8 rounded-full border border-[#333] group-hover:border-brand-gold/50 flex items-center justify-center transition-colors">
+              <ChevronRight size={18} className="text-gray-500 group-hover:text-brand-gold transition-colors" />
+            </div>
           </button>
+
           <button
             onClick={() => handleSelectTipo('convencional')}
-            className="w-full max-w-[400px] flex items-center justify-center gap-3 bg-gradient-to-r from-brand-success to-brand-success2 text-white font-bold py-4 px-6 rounded-xl hover:brightness-110 transition-all duration-300 transform hover:scale-[1.02] text-base sm:text-lg uppercase tracking-wide"
+            className="group w-full max-w-[400px] flex items-center justify-between bg-gradient-to-br from-[#121212] to-[#181818] border border-[#2A2A2A] hover:border-brand-gold text-white font-bold py-5 px-6 rounded-2xl transition-all duration-300 text-base sm:text-lg uppercase tracking-wide cursor-pointer shadow-lg hover:shadow-[0_0_20px_rgba(218,165,32,0.15)]"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            <PartyPopper size={24} />
-            Lista Convencional
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-[#1A1A1A] rounded-xl border border-[#222] group-hover:border-brand-gold/30 group-hover:text-brand-gold transition-colors duration-300">
+                <PartyPopper size={22} />
+              </div>
+              <span>Convencional</span>
+            </div>
+            <div className="w-8 h-8 rounded-full border border-[#333] group-hover:border-brand-gold/50 flex items-center justify-center transition-colors">
+              <ChevronRight size={18} className="text-gray-500 group-hover:text-brand-gold transition-colors" />
+            </div>
           </button>
         </div>
       )}
 
       {/* ========== STEP: DATA DO EVENTO ========== */}
       {step === 'data' && (
-        <div className="flex flex-col items-center gap-5">
+        <div className="flex flex-col items-center gap-5 relative z-10 animate-in fade-in zoom-in-95 duration-500">
           <button
             onClick={() => setStep('tipo')}
-            className="self-start flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="self-start flex items-center gap-2 text-sm text-gray-400 hover:text-brand-gold transition-colors font-medium mb-2"
           >
             <ArrowLeft size={16} /> Voltar
           </button>
 
-          <h2 className="text-black text-center text-xl sm:text-2xl md:text-[28px] font-bold uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Para quando é a lista?
-          </h2>
-          <p className="text-gray-500 text-center text-sm md:text-base mb-2">
-            Nossas listas são válidas para Segunda, Sexta e Sábado. No próprio dia da festa, encerramos a lista às 21h00.
-          </p>
+          <div className="flex flex-col gap-2 items-center mb-2">
+            <h2 className="text-white text-center text-2xl sm:text-[28px] font-bold uppercase tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>
+              Escolha a <span className="text-brand-gold">Data</span>
+            </h2>
+            <p className="text-gray-400 text-center text-sm max-w-[340px]">
+              Nossas listas são válidas para Segunda, Sexta e Sábado. No próprio dia da festa, encerramos a lista às 21h00.
+            </p>
+          </div>
 
-          <div className="w-full max-w-[400px] flex flex-col gap-3">
+          <div className="w-full max-w-[400px] flex flex-col gap-3 mt-2">
             {getAvailableDates().map((dataOption) => (
               <button
                 key={dataOption.getTime()}
                 onClick={() => handleDataNext(toISODate(dataOption))}
-                className="w-full bg-[#D9D9D9] hover:bg-brand-gold hover:text-white text-black font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-sm border border-transparent hover:border-brand-gold"
+                className="group w-full flex items-center gap-4 bg-[#111111] border border-[#2A2A2A] hover:border-brand-gold hover:bg-[#151515] text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-[0_0_15px_rgba(218,165,32,0.1)]"
               >
-                {formatDateLabel(dataOption)}
+                <CalendarDays size={20} className="text-gray-500 group-hover:text-brand-gold transition-colors" />
+                <span className="text-left flex-1 tracking-wide">{formatDateLabel(dataOption)}</span>
               </button>
             ))}
           </div>
@@ -245,170 +272,209 @@ export const VipForm: React.FC = () => {
 
       {/* ========== STEP: RESPONSÁVEL ========== */}
       {step === 'responsavel' && (
-        <div className="flex flex-col items-center gap-4 md:gap-5">
+        <div className="flex flex-col items-center gap-5 relative z-10 animate-in fade-in zoom-in-95 duration-500">
           <button
             onClick={() => setStep('data')}
-            className="self-start flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="self-start flex items-center gap-2 text-sm text-gray-400 hover:text-brand-gold transition-colors font-medium"
           >
             <ArrowLeft size={16} /> Voltar
           </button>
 
-          <h2 className="text-black text-center text-lg sm:text-xl md:text-2xl font-bold uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-            {tipo === 'aniversario' ? '🎂 Nome do Aniversariante' : '🎉 Nome do Responsável'}
-          </h2>
-
-          <div className="w-full">
-            <input
-              type="text"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              className={inputClass}
-              placeholder={`Nome do ${tipoLabel.toLowerCase()}`}
-            />
-            {nomeError && <p className="text-red-500 text-sm mt-1 text-center">{nomeError}</p>}
+          <div className="flex flex-col gap-2 items-center mb-2">
+            <div className="p-3 bg-[#111] rounded-full border border-[#2A2A2A] mb-1">
+               <Crown size={24} className="text-brand-gold" />
+            </div>
+            <h2 className="text-white text-center text-xl sm:text-2xl font-bold uppercase tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>
+               <span className="text-brand-gold">Dados</span> Pessoais
+            </h2>
+            <p className="text-gray-400 text-center text-sm">Insira os dados do {tipoLabel.toLowerCase()} para prosseguir</p>
           </div>
 
-          <h2 className="text-black text-center text-lg sm:text-xl md:text-2xl font-bold uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Telefone
-          </h2>
+          <div className="w-full max-w-[420px] space-y-5">
+            <div className="space-y-2">
+              <label className="text-gray-300 text-xs font-bold uppercase tracking-wider ml-1">Nome Completo</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className={`${inputClass} pl-4`}
+                  placeholder="Seu nome completo"
+                />
+              </div>
+              {nomeError && <p className="text-red-400 text-xs mt-1 ml-1">{nomeError}</p>}
+            </div>
 
-          <div className="w-full">
-            <input
-              type="tel"
-              value={telefone}
-              onChange={(e) => setTelefone(applyPhoneMask(e.target.value))}
-              className={inputClass}
-              placeholder="(11) 99999-9999"
-            />
-            {telefoneError && <p className="text-red-500 text-sm mt-1 text-center">{telefoneError}</p>}
+            <div className="space-y-2">
+              <label className="text-gray-300 text-xs font-bold uppercase tracking-wider ml-1">WhatsApp</label>
+              <div className="relative">
+                <input
+                  type="tel"
+                  value={telefone}
+                  onChange={(e) => setTelefone(applyPhoneMask(e.target.value))}
+                  className={`${inputClass} pl-4`}
+                  placeholder="(11) 99999-9999"
+                />
+              </div>
+              {telefoneError && <p className="text-red-400 text-xs mt-1 ml-1">{telefoneError}</p>}
+            </div>
           </div>
 
           <button
             onClick={handleResponsavelNext}
-            className="bg-gradient-to-r from-brand-success to-brand-success2 text-white font-bold py-3 px-8 rounded-lg hover:brightness-110 transition-all duration-300 transform hover:scale-105 uppercase tracking-wide text-sm sm:text-base"
+            className="w-full max-w-[420px] mt-4 bg-brand-gold text-black font-bold py-4 rounded-xl hover:bg-white transition-all duration-300 uppercase tracking-widest text-sm sm:text-base border border-transparent hover:border-brand-gold shadow-[0_0_20px_rgba(218,165,32,0.2)]"
             style={{ fontFamily: 'Inter, sans-serif' }}
           >
-            Próximo →
+            Continuar
           </button>
         </div>
       )}
 
       {/* ========== STEP: CONVIDADOS ========== */}
       {step === 'convidados' && (
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-5 relative z-10 animate-in fade-in zoom-in-95 duration-500 w-full">
           <button
             onClick={() => setStep('responsavel')}
-            className="self-start flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            className="self-start flex items-center gap-2 text-sm text-gray-400 hover:text-brand-gold transition-colors font-medium"
           >
             <ArrowLeft size={16} /> Voltar
           </button>
 
-          <h2 className="text-black text-center text-lg sm:text-xl md:text-2xl font-bold uppercase" style={{ fontFamily: 'Inter, sans-serif' }}>
-            Adicionar Convidados
-          </h2>
-
-          <p className="text-gray-500 text-sm text-center">
-            Lista de <strong>{nome}</strong> • {convidados.length} convidado{convidados.length !== 1 ? 's' : ''}
-          </p>
+          <div className="flex flex-col gap-1 items-center mb-2 w-full">
+            <h2 className="text-white text-center text-xl sm:text-2xl font-bold uppercase tracking-widest" style={{ fontFamily: 'Inter, sans-serif' }}>
+               Lista de <span className="text-brand-gold">Convidados</span>
+            </h2>
+            <p className="text-gray-400 text-sm text-center">
+              Adicionando para <strong>{nome.split(' ')[0]}</strong>
+            </p>
+          </div>
 
           {/* Lista de convidados adicionados */}
           {convidados.length > 0 && (
-            <div className="w-full max-w-[420px] max-h-[180px] overflow-y-auto space-y-2">
-              {convidados.map((c, i) => (
-                <div key={i} className="flex items-center justify-between bg-gray-100 rounded-lg px-4 py-2">
-                  <span className="text-black text-sm font-medium">{c}</span>
-                  <button
-                    onClick={() => handleRemoveConvidado(i)}
-                    className="text-red-400 hover:text-red-600 transition-colors"
-                    aria-label={`Remover ${c}`}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-              ))}
+            <div className="w-full max-w-[420px] flex flex-col gap-2">
+              <div className="flex justify-between items-center px-1">
+                <span className="text-gray-400 text-xs uppercase font-bold tracking-wider">Adicionados ({convidados.length})</span>
+              </div>
+              <div className="w-full max-h-[160px] overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                {convidados.map((c, i) => (
+                  <div key={i} className="flex items-center justify-between bg-[#111] border border-[#222] rounded-lg px-4 py-3 group hover:border-[#333] transition-colors">
+                    <span className="text-gray-200 text-sm font-medium">{c}</span>
+                    <button
+                      onClick={() => handleRemoveConvidado(i)}
+                      className="text-[#555] hover:text-red-400 transition-colors"
+                      aria-label={`Remover ${c}`}
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           {/* Toggle entre modos */}
-          <div className="w-full max-w-[420px] mx-auto flex justify-end">
+          <div className="w-full max-w-[420px] flex justify-end">
             <button
               type="button"
               onClick={() => setInputMode(inputMode === 'individual' ? 'colar' : 'individual')}
-              className="text-xs text-blue-500 hover:text-blue-700 underline transition-colors"
+              className="text-xs text-brand-gold/80 hover:text-brand-gold transition-colors font-medium flex items-center gap-1 bg-[#1A1A1A] px-3 py-1.5 rounded-full border border-[#2A2A2A]"
             >
-              {inputMode === 'individual' ? '📋 Colar lista de nomes' : '✏️ Adicionar um por um'}
+              {inputMode === 'individual' ? '📋 Colar lista completa' : '✏️ Adicionar um por um'}
             </button>
           </div>
 
           {inputMode === 'individual' ? (
             /* Campo adicionar convidado individual */
-            <div className="w-full flex gap-2 max-w-[420px] mx-auto">
+            <div className="w-full flex gap-3 max-w-[420px] mx-auto mt-1">
               <input
                 type="text"
                 value={novoConvidado}
                 onChange={(e) => setNovoConvidado(e.target.value)}
                 onKeyDown={handleKeyDown}
-                className="flex-1 h-[42px] bg-[#D9D9D9] rounded-lg px-4 text-black text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-brand-gold focus:bg-white transition-all duration-300 font-medium"
+                className="flex-1 h-[48px] bg-[#111] border border-[#2A2A2A] rounded-xl px-4 text-white text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all"
                 placeholder="Nome do convidado"
               />
               <button
                 onClick={handleAddConvidado}
-                className="h-[42px] px-4 bg-brand-gold text-black rounded-lg hover:brightness-110 transition-all font-bold flex items-center gap-1"
+                className="h-[48px] px-5 bg-[#1A1A1A] border border-[#333] hover:border-brand-gold hover:text-brand-gold text-white rounded-xl transition-all font-bold flex items-center justify-center"
                 type="button"
               >
-                <Plus size={18} />
+                <Plus size={20} />
               </button>
             </div>
           ) : (
             /* Modo colar lista */
-            <div className="w-full max-w-[420px] mx-auto flex flex-col gap-2">
+            <div className="w-full max-w-[420px] mx-auto flex flex-col gap-3 mt-1">
               <textarea
                 value={textoColar}
                 onChange={(e) => setTextoColar(e.target.value)}
-                className="w-full h-[120px] bg-[#D9D9D9] rounded-lg p-3 text-black text-sm focus:outline-none focus:ring-2 focus:ring-brand-gold focus:bg-white transition-all duration-300 font-medium resize-none"
-                placeholder={"Cole os nomes aqui\n(um nome por linha)\n\nEx:\nJoão Silva\nMaria Santos\nPedro Oliveira"}
+                className="w-full h-[120px] bg-[#111] border border-[#2A2A2A] rounded-xl p-4 text-white text-sm focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all resize-none shadow-inner custom-scrollbar"
+                placeholder={"Cole os nomes aqui, um por linha.\nEx:\nJoão Silva\nMaria Santos\nPedro Oliveira"}
               />
               <button
                 type="button"
                 onClick={handleColarNomes}
-                className="self-end bg-brand-gold text-black font-bold py-2 px-5 rounded-lg hover:brightness-110 transition-all text-sm"
+                className="w-full bg-[#1A1A1A] border border-[#333] text-gray-200 font-bold py-3 px-5 rounded-xl hover:border-brand-gold hover:text-brand-gold transition-all text-sm uppercase tracking-wider"
               >
-                Adicionar Todos
+                Processar Nomes
               </button>
             </div>
           )}
 
           {/* Botão finalizar */}
-          <button
-            onClick={handleSubmit}
-            disabled={isLoading}
-            className="mt-2 bg-gradient-to-r from-brand-success to-brand-success2 text-white font-bold py-3 px-8 rounded-lg hover:brightness-110 transition-all duration-300 transform hover:scale-105 uppercase tracking-wide text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-            style={{ fontFamily: 'Inter, sans-serif' }}
-          >
-            {isLoading ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="animate-spin" size={20} />
-                Enviando...
-              </span>
-            ) : (
-              `Finalizar Lista (${convidados.length} convidado${convidados.length !== 1 ? 's' : ''})`
-            )}
-          </button>
+          <div className="w-full max-w-[420px] mt-4 pt-4 border-t border-[#222]">
+            <button
+              onClick={handleSubmit}
+              disabled={isLoading}
+              className="w-full bg-brand-gold text-black font-bold py-4 rounded-xl hover:bg-white transition-all duration-300 uppercase tracking-widest text-sm sm:text-base border border-transparent shadow-[0_0_20px_rgba(218,165,32,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              style={{ fontFamily: 'Inter, sans-serif' }}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="animate-spin" size={20} />
+                  Enviando...
+                </>
+              ) : (
+                `Finalizar Lista (${convidados.length})`
+              )}
+            </button>
+          </div>
         </div>
       )}
 
       {/* ========== STEP: SUCESSO ========== */}
       {step === 'sucesso' && (
-        <div className="flex flex-col items-center gap-4 text-center py-4">
-          <div className="text-5xl">{tipo === 'aniversario' ? '🎂' : '🎉'}</div>
-          <h2 className="text-brand-gold text-2xl sm:text-3xl font-bold">Obrigado!</h2>
-          <p className="text-gray-700 text-base sm:text-lg leading-relaxed">
-            A lista de <strong>{nome}</strong> foi criada com sucesso!
+        <div className="flex flex-col items-center gap-6 text-center py-8 relative z-10 animate-in fade-in zoom-in-95 duration-500">
+          <div className="relative">
+            <div className="absolute inset-0 bg-brand-gold/20 blur-xl rounded-full" />
+            <CheckCircle2 size={80} className="text-brand-gold relative z-10" strokeWidth={1.5} />
+          </div>
+          
+          <div className="space-y-2 mt-4">
+            <h2 className="text-brand-gold text-2xl sm:text-3xl font-bold uppercase tracking-widest">Sucesso!</h2>
+            <p className="text-white text-base sm:text-lg leading-relaxed font-light">
+              Tudo pronto para <strong>{nome}</strong>
+            </p>
+          </div>
+
+          <div className="bg-[#111] border border-[#222] rounded-2xl w-full max-w-[340px] p-5 space-y-3 shadow-lg">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">Tipo</span>
+              <span className="text-white font-medium">{tipo === 'aniversario' ? 'Aniversário' : 'Convencional'}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">Data</span>
+              <span className="text-white font-medium">{dataEvento.split('-').reverse().join('/')}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-400">Convidados</span>
+              <span className="text-white font-medium">{convidados.length} pessoa(s)</span>
+            </div>
+          </div>
+
+          <p className="text-gray-500 text-xs uppercase tracking-widest mt-2 border border-[#222] px-4 py-2 rounded-full">
+            Aguarde nosso contato
           </p>
-          <p className="text-gray-500 text-sm">
-            {tipo === 'aniversario' ? 'Lista Aniversário' : 'Lista Convencional'} • {convidados.length} convidado{convidados.length !== 1 ? 's' : ''}
-          </p>
-          <p className="text-gray-400 text-sm">Aguarde nosso contato em breve!</p>
         </div>
       )}
     </section>
