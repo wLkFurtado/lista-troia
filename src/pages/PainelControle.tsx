@@ -328,7 +328,7 @@ export default function PainelControle() {
                 <p className="font-medium tracking-wider text-sm">CARREGANDO DADOS...</p>
               </div>
             ) : items.length === 0 ? (
-              <div className="text-center text-zinc-500 py-16 font-medium bg-black/30 rounded-2xl border border-white/5">Nenhuma lista encontrada com os filtros atuais.</div>
+              <div className="text-center text-zinc-400 py-16 font-medium bg-black/30 rounded-2xl border border-white/5">Nenhuma lista encontrada com os filtros atuais.</div>
             ) : (
               items.map((p) => (
                 <Card key={p.id} className="bg-gradient-to-r from-zinc-900/80 to-zinc-900/40 border-brand-gold/10 hover:border-brand-gold/30 transition-all duration-300 rounded-2xl shadow-md overflow-hidden">
@@ -358,7 +358,7 @@ export default function PainelControle() {
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-zinc-600 mt-3 font-medium uppercase tracking-wider">
+                        <div className="text-[11px] text-zinc-400 mt-3 font-medium uppercase tracking-wider">
                           Cadastrado: {formatDateTime(p.data_cadastro)}
                         </div>
                       </div>

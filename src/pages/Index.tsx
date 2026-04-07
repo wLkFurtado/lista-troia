@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { Logo } from '@/components/Logo';
 import { GradientText } from '@/components/GradientText';

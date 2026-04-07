@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useUTM } from '@/hooks/useUTM';
 import type { ListaTipo } from '@/types/lead';
 import { insertListaComConvidados, checkDuplicatePhone } from '@/integrations/supabase/leads';
-import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, Users, CheckCircle2, ChevronRight, Phone } from 'lucide-react';
+import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight } from 'lucide-react';
 
 function applyPhoneMask(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
