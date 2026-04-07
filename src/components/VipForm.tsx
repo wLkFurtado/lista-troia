@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useUTM } from '@/hooks/useUTM';
 import type { ListaTipo } from '@/types/lead';
 import { insertListaComConvidados, checkDuplicatePhone } from '@/integrations/supabase/leads';
-import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight } from 'lucide-react';
+import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight, Check } from 'lucide-react';
 
 function applyPhoneMask(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -17,6 +17,42 @@ function applyPhoneMask(value: string): string {
 
 type Step = 'tipo' | 'data' | 'responsavel' | 'convidados' | 'sucesso';
 type InputMode = 'individual' | 'colar';
+
+const STEP_ORDER: Step[] = ['tipo', 'data', 'responsavel', 'convidados'];
+const STEP_LABELS = ['Tipo', 'Data', 'Dados', 'Lista'];
+
+function StepProgress({ currentStep }: { currentStep: Step }) {
+  const currentIndex = STEP_ORDER.indexOf(currentStep);
+  if (currentIndex === -1) return null; // sucesso step
+
+  return (
+    <div className="w-full max-w-[420px] mx-auto mb-6 flex items-center justify-between gap-1">
+      {STEP_ORDER.map((step, i) => {
+        const isDone = i < currentIndex;
+        const isCurrent = i === currentIndex;
+        return (
+          <div key={step} className="flex-1 flex flex-col items-center gap-1.5">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+              isDone
+                ? 'bg-brand-gold text-black'
+                : isCurrent
+                  ? 'border-2 border-brand-gold text-brand-gold bg-transparent'
+                  : 'border border-[#333] text-[#555] bg-transparent'
+            }`}>
+              {isDone ? <Check size={14} strokeWidth={3} /> : i + 1}
+            </div>
+            <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
+              isDone ? 'text-brand-gold' : isCurrent ? 'text-brand-gold/80' : 'text-[#555]'
+            }`}>{STEP_LABELS[i]}</span>
+            {i < STEP_ORDER.length - 1 && (
+              <div className={`absolute`} />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export const VipForm: React.FC = () => {
   const [step, setStep] = useState<Step>('tipo');
@@ -43,23 +79,16 @@ export const VipForm: React.FC = () => {
   const getAvailableDates = () => {
     const dates: Date[] = [];
     const now = new Date();
-    
-    // 1 = Segunda, 5 = Sexta, 6 = Sábado
     const allowedDays = [1, 5, 6];
 
     for (let i = 0; i < 14; i++) {
       const candidate = new Date(now);
       candidate.setDate(now.getDate() + i);
-      candidate.setHours(0, 0, 0, 0); 
-      
-      const dayOfWeek = candidate.getDay(); 
-      
+      candidate.setHours(0, 0, 0, 0);
+      const dayOfWeek = candidate.getDay();
       if (allowedDays.includes(dayOfWeek)) {
         if (i === 0) {
-          const currentHour = now.getHours();
-          if (currentHour < 21) {
-            dates.push(candidate);
-          }
+          if (now.getHours() < 21) dates.push(candidate);
         } else {
           dates.push(candidate);
         }
@@ -113,6 +142,11 @@ export const VipForm: React.FC = () => {
       toast.error('Nome do convidado deve ter pelo menos 2 caracteres', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
       return;
     }
+    // Duplicate detection
+    if (convidados.some(c => c.toLowerCase() === name.toLowerCase())) {
+      toast.warning('Este convidado já está na lista!', { style: { background: '#202020', color: '#DAA520', border: '1px solid #DAA520' } });
+      return;
+    }
     setConvidados([...convidados, name]);
     setNovoConvidado('');
   };
@@ -137,13 +171,22 @@ export const VipForm: React.FC = () => {
       toast.error('Nenhum nome válido encontrado. Coloque um nome por linha.', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
       return;
     }
-    setConvidados([...convidados, ...nomes]);
+    // Filter duplicates from paste
+    const existing = new Set(convidados.map(c => c.toLowerCase()));
+    const uniqueNomes = nomes.filter(n => !existing.has(n.toLowerCase()));
+    const dupes = nomes.length - uniqueNomes.length;
+    
+    setConvidados([...convidados, ...uniqueNomes]);
     setTextoColar('');
     setInputMode('individual');
-    toast.success(`${nomes.length} nome${nomes.length > 1 ? 's' : ''} adicionado${nomes.length > 1 ? 's' : ''}!`, { style: { background: '#202020', color: '#DAA520', border: '1px solid #DAA520' } });
+    
+    let msg = `${uniqueNomes.length} nome${uniqueNomes.length > 1 ? 's' : ''} adicionado${uniqueNomes.length > 1 ? 's' : ''}!`;
+    if (dupes > 0) msg += ` (${dupes} duplicado${dupes > 1 ? 's' : ''} ignorado${dupes > 1 ? 's' : ''})`;
+    toast.success(msg, { style: { background: '#202020', color: '#DAA520', border: '1px solid #DAA520' } });
   };
 
   const handleSubmit = async () => {
+    if (convidados.length === 0) return;
     setIsLoading(true);
     try {
       const rawPhone = telefone.replace(/\D/g, '');
@@ -184,6 +227,8 @@ export const VipForm: React.FC = () => {
 
   const inputClass = "w-full max-w-[420px] h-[52px] bg-[#111111] border border-[#2A2A2A] rounded-xl px-5 text-white text-base focus:outline-none focus:border-brand-gold focus:ring-1 focus:ring-brand-gold transition-all duration-300 mx-auto block font-medium placeholder-gray-500 shadow-inner";
 
+  const canFinalize = convidados.length > 0;
+
   return (
     <section className="w-[95%] max-w-[560px] bg-[#050505]/90 backdrop-blur-xl border border-[#222] shadow-[0_0_50px_rgba(218,165,32,0.07)] px-5 py-8 rounded-[32px] sm:px-8 sm:py-10 md:px-[40px] md:py-[48px] relative overflow-hidden">
       
@@ -191,6 +236,9 @@ export const VipForm: React.FC = () => {
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-brand-gold/70 to-transparent" />
       <div className="absolute -top-32 -right-32 w-64 h-64 bg-brand-gold opacity-[0.04] blur-[80px] rounded-full pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-brand-gold opacity-[0.04] blur-[80px] rounded-full pointer-events-none" />
+
+      {/* Step Progress */}
+      {step !== 'sucesso' && <StepProgress currentStep={step} />}
 
       {/* ========== STEP: TIPO ========== */}
       {step === 'tipo' && (
@@ -293,29 +341,25 @@ export const VipForm: React.FC = () => {
           <div className="w-full max-w-[420px] space-y-5">
             <div className="space-y-2">
               <label className="text-gray-300 text-xs font-bold uppercase tracking-wider ml-1">Nome Completo</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={nome}
-                  onChange={(e) => setNome(e.target.value)}
-                  className={`${inputClass} pl-4`}
-                  placeholder="Seu nome completo"
-                />
-              </div>
+              <input
+                type="text"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                className={`${inputClass} pl-4`}
+                placeholder="Seu nome completo"
+              />
               {nomeError && <p className="text-red-400 text-xs mt-1 ml-1">{nomeError}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-gray-300 text-xs font-bold uppercase tracking-wider ml-1">WhatsApp</label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  value={telefone}
-                  onChange={(e) => setTelefone(applyPhoneMask(e.target.value))}
-                  className={`${inputClass} pl-4`}
-                  placeholder="(11) 99999-9999"
-                />
-              </div>
+              <input
+                type="tel"
+                value={telefone}
+                onChange={(e) => setTelefone(applyPhoneMask(e.target.value))}
+                className={`${inputClass} pl-4`}
+                placeholder="(11) 99999-9999"
+              />
               {telefoneError && <p className="text-red-400 text-xs mt-1 ml-1">{telefoneError}</p>}
             </div>
           </div>
@@ -384,7 +428,6 @@ export const VipForm: React.FC = () => {
           </div>
 
           {inputMode === 'individual' ? (
-            /* Campo adicionar convidado individual */
             <div className="w-full flex gap-3 max-w-[420px] mx-auto mt-1">
               <input
                 type="text"
@@ -403,7 +446,6 @@ export const VipForm: React.FC = () => {
               </button>
             </div>
           ) : (
-            /* Modo colar lista */
             <div className="w-full max-w-[420px] mx-auto flex flex-col gap-3 mt-1">
               <textarea
                 value={textoColar}
@@ -423,9 +465,12 @@ export const VipForm: React.FC = () => {
 
           {/* Botão finalizar */}
           <div className="w-full max-w-[420px] mt-4 pt-4 border-t border-[#222]">
+            {!canFinalize && (
+              <p className="text-center text-xs text-zinc-500 mb-3">Adicione pelo menos 1 convidado para finalizar</p>
+            )}
             <button
               onClick={handleSubmit}
-              disabled={isLoading}
+              disabled={isLoading || !canFinalize}
               className="w-full bg-brand-gold text-black font-bold py-4 rounded-xl hover:bg-white transition-all duration-300 uppercase tracking-widest text-sm sm:text-base border border-transparent shadow-[0_0_20px_rgba(218,165,32,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
@@ -435,7 +480,7 @@ export const VipForm: React.FC = () => {
                   Enviando...
                 </>
               ) : (
-                `Finalizar Lista (${convidados.length})`
+                `Finalizar Lista (${convidados.length} convidado${convidados.length !== 1 ? 's' : ''})`
               )}
             </button>
           </div>

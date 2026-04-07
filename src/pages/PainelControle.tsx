@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { LeadStatus, ListaTipo, Convidado } from '@/types/lead'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronUp, Cake, PartyPopper, CheckCircle, Search, Calendar } from 'lucide-react'
+import { ChevronDown, ChevronUp, Cake, PartyPopper, CheckCircle, Search, Calendar, RefreshCw, Download, X, CheckCheck } from 'lucide-react'
 import {
   fetchListasSupabase,
   fetchListaStats,
@@ -32,6 +32,14 @@ function formatDateTime(iso: string) {
   return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
 }
 
+function getTodayISO() {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = (now.getMonth() + 1).toString().padStart(2, '0')
+  const d = now.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 const STATUS_OPTIONS: { label: string; value: 'todos' | LeadStatus }[] = [
   { label: 'Todos', value: 'todos' },
   { label: 'Não conferido', value: 'aguardando' },
@@ -44,14 +52,14 @@ const TIPO_OPTIONS: { label: string; value: 'todos' | ListaTipo }[] = [
   { label: 'Convencional', value: 'convencional' },
 ]
 
-// DATE_OPTIONS removed in favor of native date picker
-
 const PAGE_SIZE = 25
 
 function ExpandableConvidados({ listaId, onStatusChange }: { listaId: string, onStatusChange?: () => void }) {
   const [open, setOpen] = useState(false)
   const [guests, setGuests] = useState<Convidado[]>([])
   const [loading, setLoading] = useState(false)
+
+  const pendingCount = guests.filter(g => g.status === 'aguardando').length
 
   const toggle = async () => {
     if (!open && guests.length === 0) {
@@ -83,6 +91,28 @@ function ExpandableConvidados({ listaId, onStatusChange }: { listaId: string, on
     }
   }
 
+  const handleConfirmAll = async () => {
+    const pending = guests.filter(g => g.status === 'aguardando')
+    if (pending.length === 0) return
+
+    const prevGuests = [...guests]
+    setGuests(guests.map(g => g.status === 'aguardando' ? { ...g, status: 'entrou' as LeadStatus } : g))
+
+    const now = new Date().toISOString()
+    const results = await Promise.all(
+      pending.map(g => updateConvidadoStatus({ id: g.id, status: 'entrou', data_entrada: now }))
+    )
+
+    const hasError = results.some(r => r.error)
+    if (hasError) {
+      setGuests(prevGuests)
+      toast.error('Erro ao confirmar alguns convidados.')
+    } else {
+      toast.success(`${pending.length} convidado${pending.length > 1 ? 's' : ''} confirmado${pending.length > 1 ? 's' : ''}!`)
+      if (onStatusChange) onStatusChange()
+    }
+  }
+
   return (
     <div className="mt-4 border-t border-brand-gold/10 pt-3">
       <button
@@ -100,57 +130,71 @@ function ExpandableConvidados({ listaId, onStatusChange }: { listaId: string, on
           ) : guests.length === 0 ? (
             <p className="text-sm text-zinc-500 italic pl-6">Nenhum convidado nessa lista.</p>
           ) : (
-            <div className="grid grid-cols-1 gap-2.5 pl-2 mt-4">
-              {guests.map((g) => (
-                <div 
-                  key={g.id} 
-                  className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 py-3 px-4 rounded-xl border transition-all ${
-                    g.status === 'entrou' 
-                      ? 'bg-emerald-950/40 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
-                      : 'bg-black/40 border-white/5 hover:bg-black/60 hover:border-brand-gold/20'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`h-2.5 w-2.5 rounded-full shrink-0 shadow-sm ${g.status === 'entrou' ? 'bg-emerald-400 shadow-emerald-400/50' : 'bg-brand-gold shadow-brand-gold/50'}`} />
-                    <span className={`text-sm font-bold uppercase tracking-wide ${g.status === 'entrou' ? 'text-emerald-400' : 'text-zinc-200'}`}>
-                      {g.nome}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                    {g.status === 'aguardando' ? (
-                      <Badge variant="secondary" className="bg-zinc-900 text-zinc-400 font-bold uppercase tracking-wider text-[10px] border border-white/5 px-2 py-0.5">
-                        Não conferido
-                      </Badge>
-                    ) : (
-                      <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-none font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 shadow-none">
-                        Já entrou
-                      </Badge>
-                    )}
-
-                    {g.status === 'aguardando' ? (
-                      <Button
-                        size="sm"
-                        className="h-8 shadow-[0_0_10px_rgba(255,215,0,0.2)] bg-brand-gold hover:bg-brand-gold-light text-black font-bold uppercase text-[10px] tracking-wider px-4 ml-auto sm:ml-0 border-0 transition-all"
-                        onClick={() => handleUpdateGuestStatus(g, 'entrou')}
-                      >
-                        <CheckCircle size={14} className="mr-1.5" />
-                        Confirmar
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-8 border-white/10 hover:bg-zinc-800 hover:text-white hover:border-white/20 text-zinc-400 font-bold uppercase text-[10px] tracking-wider px-4 ml-auto sm:ml-0 bg-transparent transition-all"
-                        onClick={() => handleUpdateGuestStatus(g, 'aguardando')}
-                      >
-                        Desfazer
-                      </Button>
-                    )}
-                  </div>
+            <>
+              {pendingCount > 0 && (
+                <div className="pl-2 mb-3">
+                  <Button
+                    size="sm"
+                    onClick={handleConfirmAll}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase text-[11px] tracking-wider px-4 h-9 shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                  >
+                    <CheckCheck size={15} className="mr-1.5" />
+                    Confirmar todos ({pendingCount})
+                  </Button>
                 </div>
-              ))}
-            </div>
+              )}
+              <div className="grid grid-cols-1 gap-2.5 pl-2 mt-2">
+                {guests.map((g) => (
+                  <div 
+                    key={g.id} 
+                    className={`flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 py-3 px-4 rounded-xl border transition-all ${
+                      g.status === 'entrou' 
+                        ? 'bg-emerald-950/40 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]' 
+                        : 'bg-black/40 border-white/5 hover:bg-black/60 hover:border-brand-gold/20'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`h-2.5 w-2.5 rounded-full shrink-0 shadow-sm ${g.status === 'entrou' ? 'bg-emerald-400 shadow-emerald-400/50' : 'bg-brand-gold shadow-brand-gold/50'}`} />
+                      <span className={`text-sm font-bold uppercase tracking-wide ${g.status === 'entrou' ? 'text-emerald-400' : 'text-zinc-200'}`}>
+                        {g.nome}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                      {g.status === 'aguardando' ? (
+                        <Badge variant="secondary" className="bg-zinc-900 text-zinc-400 font-bold uppercase tracking-wider text-[10px] border border-white/5 px-2 py-0.5">
+                          Não conferido
+                        </Badge>
+                      ) : (
+                        <Badge variant="default" className="bg-emerald-500/20 text-emerald-400 border-none font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 shadow-none">
+                          Já entrou
+                        </Badge>
+                      )}
+
+                      {g.status === 'aguardando' ? (
+                        <Button
+                          size="sm"
+                          className="h-8 shadow-[0_0_10px_rgba(255,215,0,0.2)] bg-brand-gold hover:bg-brand-gold-light text-black font-bold uppercase text-[10px] tracking-wider px-4 ml-auto sm:ml-0 border-0 transition-all"
+                          onClick={() => handleUpdateGuestStatus(g, 'entrou')}
+                        >
+                          <CheckCircle size={14} className="mr-1.5" />
+                          Confirmar
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 border-white/10 hover:bg-zinc-800 hover:text-white hover:border-white/20 text-zinc-400 font-bold uppercase text-[10px] tracking-wider px-4 ml-auto sm:ml-0 bg-transparent transition-all"
+                          onClick={() => handleUpdateGuestStatus(g, 'aguardando')}
+                        >
+                          Desfazer
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       )}
@@ -168,12 +212,16 @@ export default function PainelControle() {
   const [page, setPage] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({ today: 0, entered: 0, waiting: 0, total: 0 })
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const autoRefreshRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const [debouncedQuery, setDebouncedQuery] = useState('')
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 400)
     return () => clearTimeout(timer)
   }, [query])
+
+  const hasActiveFilters = debouncedQuery !== '' || status !== 'todos' || tipo !== 'todos' || dateRange !== 'todos'
 
   const loadStats = useCallback(async () => {
     const s = await fetchListaStats()
@@ -199,6 +247,11 @@ export default function PainelControle() {
     setIsLoading(false)
   }, [debouncedQuery, status, tipo, dateRange, page])
 
+  const refreshAll = useCallback(() => {
+    loadListas()
+    loadStats()
+  }, [loadListas, loadStats])
+
   useEffect(() => {
     document.title = 'Painel de Controle - Lista VIP'
     loadStats()
@@ -207,6 +260,23 @@ export default function PainelControle() {
   useEffect(() => { loadListas() }, [loadListas])
 
   useEffect(() => { setPage(0) }, [debouncedQuery, status, tipo, dateRange])
+
+  // Auto-refresh
+  useEffect(() => {
+    if (autoRefresh) {
+      autoRefreshRef.current = setInterval(() => {
+        refreshAll()
+      }, 30000)
+    } else {
+      if (autoRefreshRef.current) {
+        clearInterval(autoRefreshRef.current)
+        autoRefreshRef.current = null
+      }
+    }
+    return () => {
+      if (autoRefreshRef.current) clearInterval(autoRefreshRef.current)
+    }
+  }, [autoRefresh, refreshAll])
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
 
@@ -234,6 +304,53 @@ export default function PainelControle() {
     }
   }
 
+  const clearFilters = () => {
+    setQuery('')
+    setStatus('todos')
+    setTipo('todos')
+    setDateRange('todos')
+  }
+
+  const handleExportCSV = async () => {
+    toast.info('Gerando CSV...')
+    // Fetch all results matching current filters (no pagination)
+    const result = await fetchListasSupabase({
+      search: debouncedQuery,
+      status,
+      tipo,
+      dateRange,
+      page: 0,
+      pageSize: 10000,
+    })
+    if (result.error || !result.data.length) {
+      toast.error('Nenhum dado para exportar.')
+      return
+    }
+
+    const BOM = '\uFEFF'
+    const headers = ['Nome', 'Telefone', 'Tipo', 'Data Evento', 'Status', 'Convidados', 'Fonte', 'Cadastrado']
+    const rows = result.data.map(r => [
+      r.nome_responsavel,
+      formatPhoneBR(r.telefone),
+      r.tipo === 'aniversario' ? 'Aniversário' : 'Convencional',
+      r.data_evento ? r.data_evento.split('-').reverse().join('/') : '',
+      r.status === 'entrou' ? 'Já entrou' : 'Não conferido',
+      r.total_convidados.toString(),
+      r.fonte_lead || '',
+      r.data_cadastro ? formatDateTime(r.data_cadastro) : '',
+    ])
+
+    const csv = BOM + [headers, ...rows].map(row => row.map(c => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `listas_vip_${getTodayISO()}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('CSV exportado!')
+  }
+
   return (
     <div className="relative min-h-screen w-screen bg-[#020202] text-zinc-100 font-sans overflow-x-hidden">
       <div className="fixed inset-0 z-0 opacity-40 mix-blend-screen pointer-events-none">
@@ -252,18 +369,75 @@ export default function PainelControle() {
         </header>
 
         <section className="bg-zinc-950/70 backdrop-blur-2xl border border-brand-gold/20 rounded-3xl p-5 md:p-8 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
-          {/* Filters */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-8">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60" size={18} />
-              <Input
-                placeholder="Buscar por nome ou telefone..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-10 bg-black/50 border-brand-gold/20 text-white placeholder:text-zinc-500 focus-visible:ring-brand-gold/40 focus-visible:border-brand-gold rounded-xl h-11"
-              />
+          {/* Toolbar: Filters + Actions */}
+          <div className="flex flex-col gap-5 mb-8">
+            {/* Row 1: Search + Action buttons */}
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60" size={18} />
+                <Input
+                  placeholder="Buscar por nome, telefone ou convidado..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-10 bg-black/50 border-brand-gold/20 text-white placeholder:text-zinc-500 focus-visible:ring-brand-gold/40 focus-visible:border-brand-gold rounded-xl h-11"
+                />
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Today button */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setDateRange(getTodayISO())}
+                  className={`h-9 text-xs font-bold uppercase tracking-wider border-brand-gold/20 transition-all ${
+                    dateRange === getTodayISO()
+                      ? 'bg-brand-gold/20 text-brand-gold border-brand-gold/50'
+                      : 'text-zinc-400 hover:text-brand-gold hover:border-brand-gold/40 bg-transparent'
+                  }`}
+                >
+                  <Calendar size={14} className="mr-1.5" />
+                  Hoje
+                </Button>
+
+                {/* Manual refresh */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={refreshAll}
+                  className="h-9 text-xs font-bold uppercase tracking-wider border-brand-gold/20 text-zinc-400 hover:text-brand-gold hover:border-brand-gold/40 bg-transparent transition-all"
+                >
+                  <RefreshCw size={14} className="mr-1.5" />
+                  Atualizar
+                </Button>
+
+                {/* Auto-refresh toggle */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setAutoRefresh(!autoRefresh)}
+                  className={`h-9 text-xs font-bold uppercase tracking-wider border-brand-gold/20 transition-all ${
+                    autoRefresh
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                      : 'text-zinc-400 hover:text-brand-gold hover:border-brand-gold/40 bg-transparent'
+                  }`}
+                >
+                  {autoRefresh && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse mr-1.5" />}
+                  {autoRefresh ? 'Live' : 'Auto'}
+                </Button>
+
+                {/* Export CSV */}
+                <Button
+                  size="sm"
+                  onClick={handleExportCSV}
+                  className="h-9 text-xs font-bold uppercase tracking-wider bg-brand-gold hover:bg-brand-gold-light text-black transition-all shadow-[0_0_10px_rgba(218,165,32,0.2)]"
+                >
+                  <Download size={14} className="mr-1.5" />
+                  Exportar CSV
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-3 flex-wrap">
+
+            {/* Row 2: Filters */}
+            <div className="flex gap-3 flex-wrap items-center">
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60 pointer-events-none" size={18} />
                 <Input
@@ -297,6 +471,25 @@ export default function PainelControle() {
                   ))}
                 </SelectContent>
               </Select>
+
+              {hasActiveFilters && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={clearFilters}
+                  className="h-11 text-xs font-bold uppercase tracking-wider text-zinc-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                >
+                  <X size={14} className="mr-1" />
+                  Limpar filtros
+                </Button>
+              )}
+
+              {/* Results counter */}
+              <div className="ml-auto">
+                <Badge variant="outline" className="border-white/10 text-zinc-400 font-bold text-xs px-3 py-1.5">
+                  {totalCount} resultado{totalCount !== 1 ? 's' : ''}
+                </Badge>
+              </div>
             </div>
           </div>
 
@@ -335,7 +528,7 @@ export default function PainelControle() {
                   <CardContent className="p-5 md:p-6">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
                       <div>
-                        <div className="flex items-center gap-3 mb-1.5">
+                        <div className="flex items-center gap-3 mb-1.5 flex-wrap">
                           {p.tipo === 'aniversario'
                             ? <Cake size={18} className="text-brand-gold filter drop-shadow-[0_0_5px_rgba(255,215,0,0.5)]" />
                             : <PartyPopper size={18} className="text-emerald-400 filter drop-shadow-[0_0_5px_rgba(52,211,153,0.5)]" />}
@@ -343,6 +536,11 @@ export default function PainelControle() {
                           <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 border ${p.tipo === 'aniversario' ? 'border-brand-gold/50 text-brand-gold' : 'border-emerald-500/50 text-emerald-400'} bg-transparent rounded-full`}>
                             {p.tipo === 'aniversario' ? 'Aniversário' : 'Convencional'}
                           </Badge>
+                          {p.fonte_lead && (
+                            <Badge className="bg-purple-500/20 text-purple-400 border-none font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 shadow-none">
+                              {p.fonte_lead}
+                            </Badge>
+                          )}
                         </div>
                         <div className="text-sm font-medium text-zinc-400 flex items-center gap-2">
                           <span className="text-brand-gold/70">✆</span> {formatPhoneBR(p.telefone)}
