@@ -918,6 +918,83 @@ export type Database = {
         }
         Relationships: []
       }
+      lista_convidados: {
+        Row: {
+          data_entrada: string | null
+          id: string
+          lista_id: string
+          nome: string
+          status: string | null
+        }
+        Insert: {
+          data_entrada?: string | null
+          id?: string
+          lista_id: string
+          nome: string
+          status?: string | null
+        }
+        Update: {
+          data_entrada?: string | null
+          id?: string
+          lista_id?: string
+          nome?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lista_convidados_lista_id_fkey"
+            columns: ["lista_id"]
+            isOneToOne: false
+            referencedRelation: "listas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      listas: {
+        Row: {
+          data_cadastro: string | null
+          data_entrada: string | null
+          data_evento: string | null
+          fonte_lead: string | null
+          id: string
+          nome_responsavel: string
+          status: string | null
+          telefone: string
+          tipo: string
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+        }
+        Insert: {
+          data_cadastro?: string | null
+          data_entrada?: string | null
+          data_evento?: string | null
+          fonte_lead?: string | null
+          id?: string
+          nome_responsavel: string
+          status?: string | null
+          telefone: string
+          tipo: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Update: {
+          data_cadastro?: string | null
+          data_entrada?: string | null
+          data_evento?: string | null
+          fonte_lead?: string | null
+          id?: string
+          nome_responsavel?: string
+          status?: string | null
+          telefone?: string
+          tipo?: string
+          utm_campaign?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+        }
+        Relationships: []
+      }
       n8n_chat_histories: {
         Row: {
           id: number
