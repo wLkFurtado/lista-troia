@@ -113,6 +113,10 @@ export const VipForm: React.FC = () => {
       toast.error('Nome do convidado deve ter pelo menos 2 caracteres', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
       return;
     }
+    if (convidados.some(c => c.toLowerCase() === name.toLowerCase())) {
+      toast.warning(`"${name}" já está na lista!`, { style: { background: '#1A1400', color: '#DAA520', border: '1px solid #DAA520' } });
+      return;
+    }
     setConvidados([...convidados, name]);
     setNovoConvidado('');
   };
@@ -144,6 +148,10 @@ export const VipForm: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    if (convidados.length === 0) {
+      toast.error('Adicione pelo menos 1 convidado à lista!', { style: { background: '#111', color: '#fff', border: '1px solid #333' } });
+      return;
+    }
     setIsLoading(true);
     try {
       const rawPhone = telefone.replace(/\D/g, '');
@@ -191,6 +199,45 @@ export const VipForm: React.FC = () => {
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-brand-gold/70 to-transparent" />
       <div className="absolute -top-32 -right-32 w-64 h-64 bg-brand-gold opacity-[0.04] blur-[80px] rounded-full pointer-events-none" />
       <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-brand-gold opacity-[0.04] blur-[80px] rounded-full pointer-events-none" />
+
+      {/* Step Progress Indicator */}
+      {step !== 'sucesso' && (
+        <div className="flex items-center justify-center gap-0 mb-6 relative z-10">
+          {([
+            { id: 'tipo' as Step, label: 'Tipo' },
+            { id: 'data' as Step, label: 'Data' },
+            { id: 'responsavel' as Step, label: 'Dados' },
+            { id: 'convidados' as Step, label: 'Lista' },
+          ] as const).map((s, i, arr) => {
+            const order: Step[] = ['tipo', 'data', 'responsavel', 'convidados', 'sucesso'];
+            const currentIdx = order.indexOf(step);
+            const stepIdx = order.indexOf(s.id);
+            const isCompleted = currentIdx > stepIdx;
+            const isCurrent = currentIdx === stepIdx;
+            return (
+              <React.Fragment key={s.id}>
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                    isCompleted
+                      ? 'bg-brand-gold text-black shadow-[0_0_10px_rgba(218,165,32,0.4)]'
+                      : isCurrent
+                        ? 'bg-transparent border-2 border-brand-gold text-brand-gold'
+                        : 'bg-[#1A1A1A] border border-[#2A2A2A] text-gray-600'
+                  }`}>
+                    {isCompleted ? <CheckCircle2 size={14} /> : i + 1}
+                  </div>
+                  <span className={`text-[10px] font-medium uppercase tracking-wider transition-all duration-300 ${
+                    isCurrent ? 'text-brand-gold' : isCompleted ? 'text-brand-gold/50' : 'text-gray-600'
+                  }`}>{s.label}</span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div className={`w-8 h-px mb-4 mx-1 transition-all duration-300 ${isCompleted ? 'bg-brand-gold/60' : 'bg-[#2A2A2A]'}`} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
 
       {/* ========== STEP: TIPO ========== */}
       {step === 'tipo' && (
@@ -423,10 +470,15 @@ export const VipForm: React.FC = () => {
 
           {/* Botão finalizar */}
           <div className="w-full max-w-[420px] mt-4 pt-4 border-t border-[#222]">
+            {convidados.length === 0 && (
+              <p className="text-center text-xs text-amber-500/80 mb-3 font-medium">
+                Adicione pelo menos 1 convidado para finalizar
+              </p>
+            )}
             <button
               onClick={handleSubmit}
-              disabled={isLoading}
-              className="w-full bg-brand-gold text-black font-bold py-4 rounded-xl hover:bg-white transition-all duration-300 uppercase tracking-widest text-sm sm:text-base border border-transparent shadow-[0_0_20px_rgba(218,165,32,0.2)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={isLoading || convidados.length === 0}
+              className="w-full bg-brand-gold text-black font-bold py-4 rounded-xl hover:bg-white transition-all duration-300 uppercase tracking-widest text-sm sm:text-base border border-transparent shadow-[0_0_20px_rgba(218,165,32,0.2)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
               {isLoading ? (
@@ -435,7 +487,7 @@ export const VipForm: React.FC = () => {
                   Enviando...
                 </>
               ) : (
-                `Finalizar Lista (${convidados.length})`
+                `Finalizar Lista (${convidados.length} convidado${convidados.length !== 1 ? 's' : ''})`
               )}
             </button>
           </div>

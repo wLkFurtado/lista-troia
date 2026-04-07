@@ -6,13 +6,15 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import type { LeadStatus, ListaTipo, Convidado } from '@/types/lead'
 import { toast } from 'sonner'
-import { ChevronDown, ChevronUp, Cake, PartyPopper, CheckCircle, Search, Calendar } from 'lucide-react'
+import { ChevronDown, ChevronUp, Cake, PartyPopper, CheckCircle, Search, Calendar, RefreshCw, Download, X, Zap, Users } from 'lucide-react'
 import {
   fetchListasSupabase,
   fetchListaStats,
   fetchConvidados,
   updateListaStatus,
   updateConvidadoStatus,
+  fetchAllListasForExport,
+  confirmAllConvidados,
   type ListaRow,
 } from '@/integrations/supabase/leads'
 import { Logo } from '@/components/Logo'
@@ -52,6 +54,7 @@ function ExpandableConvidados({ listaId, onStatusChange }: { listaId: string, on
   const [open, setOpen] = useState(false)
   const [guests, setGuests] = useState<Convidado[]>([])
   const [loading, setLoading] = useState(false)
+  const [confirmingAll, setConfirmingAll] = useState(false)
 
   const toggle = async () => {
     if (!open && guests.length === 0) {
@@ -83,15 +86,48 @@ function ExpandableConvidados({ listaId, onStatusChange }: { listaId: string, on
     }
   }
 
+  const handleConfirmAll = async () => {
+    const pending = guests.filter(g => g.status === 'aguardando')
+    if (pending.length === 0) return
+    setConfirmingAll(true)
+    const prevGuests = [...guests]
+    const now = new Date().toISOString()
+    setGuests(guests.map(g => g.status === 'aguardando' ? { ...g, status: 'entrou' as LeadStatus, data_entrada: now } : g))
+    const { error } = await confirmAllConvidados(listaId)
+    if (error) {
+      setGuests(prevGuests)
+      toast.error('Erro ao confirmar todos os convidados.')
+    } else {
+      toast.success(`${pending.length} convidado(s) confirmado(s)!`)
+      if (onStatusChange) onStatusChange()
+    }
+    setConfirmingAll(false)
+  }
+
+  const pendingCount = guests.filter(g => g.status === 'aguardando').length
+
   return (
     <div className="mt-4 border-t border-brand-gold/10 pt-3">
-      <button
-        onClick={toggle}
-        className="flex items-center gap-1.5 text-sm font-semibold text-brand-gold/80 hover:text-brand-gold transition-colors"
-      >
-        {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-        {open ? 'Ocultar convidados' : `Ver convidados`}
-      </button>
+      <div className="flex items-center justify-between">
+        <button
+          onClick={toggle}
+          className="flex items-center gap-1.5 text-sm font-semibold text-brand-gold/80 hover:text-brand-gold transition-colors"
+        >
+          {open ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          {open ? 'Ocultar convidados' : 'Ver convidados'}
+        </button>
+        {open && pendingCount > 0 && (
+          <Button
+            size="sm"
+            disabled={confirmingAll}
+            onClick={handleConfirmAll}
+            className="h-7 px-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold uppercase text-[10px] tracking-wider border-0 flex items-center gap-1.5"
+          >
+            <Users size={12} />
+            {confirmingAll ? 'Confirmando...' : `Confirmar todos (${pendingCount})`}
+          </Button>
+        )}
+      </div>
       
       {open && (
         <div className="mt-3 space-y-2">
@@ -169,6 +205,9 @@ export default function PainelControle() {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState({ today: 0, entered: 0, waiting: 0, total: 0 })
 
+  const [autoRefresh, setAutoRefresh] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+
   const [debouncedQuery, setDebouncedQuery] = useState('')
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(query), 400)
@@ -208,7 +247,69 @@ export default function PainelControle() {
 
   useEffect(() => { setPage(0) }, [debouncedQuery, status, tipo, dateRange])
 
+  useEffect(() => {
+    if (!autoRefresh) return
+    const id = setInterval(() => {
+      loadListas()
+      loadStats()
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [autoRefresh, loadListas, loadStats])
+
   const totalPages = Math.ceil(totalCount / PAGE_SIZE)
+
+  const hasActiveFilters = query !== '' || status !== 'todos' || tipo !== 'todos' || dateRange !== 'todos'
+
+  const clearFilters = () => {
+    setQuery('')
+    setStatus('todos')
+    setTipo('todos')
+    setDateRange('todos')
+  }
+
+  const setTodayFilter = () => {
+    const now = new Date()
+    const ano = now.getFullYear()
+    const mes = (now.getMonth() + 1).toString().padStart(2, '0')
+    const dia = now.getDate().toString().padStart(2, '0')
+    setDateRange(`${ano}-${mes}-${dia}`)
+  }
+
+  const exportCSV = async () => {
+    setIsExporting(true)
+    try {
+      const { data } = await fetchAllListasForExport({
+        search: debouncedQuery,
+        status,
+        tipo,
+        dateRange,
+      })
+      const headers = ['Nome', 'Telefone', 'Tipo', 'Data Evento', 'Status', 'Convidados', 'Fonte', 'Cadastrado']
+      const rows = data.map(r => [
+        r.nome_responsavel,
+        formatPhoneBR(r.telefone),
+        r.tipo === 'aniversario' ? 'Aniversário' : 'Convencional',
+        r.data_evento ? r.data_evento.split('-').reverse().join('/') : '',
+        r.status === 'entrou' ? 'Já entrou' : 'Aguardando',
+        r.total_convidados,
+        r.fonte_lead ?? '',
+        formatDateTime(r.data_cadastro),
+      ])
+      const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n')
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `listas-vip-${new Date().toISOString().split('T')[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+      toast.success(`${data.length} lista(s) exportada(s)!`)
+    } catch {
+      toast.error('Erro ao exportar.')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   async function setStatusFor(id: string, next: LeadStatus) {
     const now = new Date().toISOString()
@@ -253,50 +354,119 @@ export default function PainelControle() {
 
         <section className="bg-zinc-950/70 backdrop-blur-2xl border border-brand-gold/20 rounded-3xl p-5 md:p-8 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
           {/* Filters */}
-          <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-5 mb-8">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60" size={18} />
-              <Input
-                placeholder="Buscar por nome ou telefone..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="pl-10 bg-black/50 border-brand-gold/20 text-white placeholder:text-zinc-500 focus-visible:ring-brand-gold/40 focus-visible:border-brand-gold rounded-xl h-11"
-              />
-            </div>
-            <div className="flex gap-3 flex-wrap">
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60 pointer-events-none" size={18} />
+          <div className="flex flex-col gap-4 mb-8">
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60" size={18} />
                 <Input
-                  type="date"
-                  value={dateRange === 'todos' ? '' : dateRange}
-                  onChange={(e) => setDateRange(e.target.value || 'todos')}
-                  className="w-[160px] pl-10 cursor-pointer bg-black/50 border-brand-gold/20 text-white focus-visible:ring-brand-gold/40 focus-visible:border-brand-gold rounded-xl h-11 [&::-webkit-calendar-picker-indicator]:opacity-0"
-                  title="Filtrar por data específica da lista"
-                  style={{ colorScheme: 'dark' }}
+                  placeholder="Buscar por nome, telefone ou convidado..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  className="pl-10 bg-black/50 border-brand-gold/20 text-white placeholder:text-zinc-500 focus-visible:ring-brand-gold/40 focus-visible:border-brand-gold rounded-xl h-11"
                 />
               </div>
+              <div className="flex gap-2 flex-wrap items-center">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={setTodayFilter}
+                  className={`h-11 px-4 font-bold uppercase text-xs tracking-wider transition-all ${
+                    dateRange !== 'todos' && /^\d{4}-\d{2}-\d{2}$/.test(dateRange)
+                      ? 'bg-brand-gold/20 border-brand-gold text-brand-gold'
+                      : 'border-brand-gold/20 text-brand-gold/70 hover:bg-brand-gold/10 hover:text-brand-gold bg-transparent'
+                  }`}
+                >
+                  <Calendar size={14} className="mr-1.5" />
+                  Hoje
+                </Button>
 
-              <Select value={status} onValueChange={(v) => setStatus(v as 'todos' | LeadStatus)}>
-                <SelectTrigger className="w-[160px] bg-black/50 border-brand-gold/20 text-white focus:ring-brand-gold/40 focus:border-brand-gold rounded-xl h-11">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-950 border-brand-gold/20 text-white rounded-xl">
-                  {STATUS_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value} className="focus:bg-brand-gold/20 focus:text-white cursor-pointer">{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-gold/60 pointer-events-none" size={18} />
+                  <Input
+                    type="date"
+                    value={dateRange === 'todos' ? '' : dateRange}
+                    onChange={(e) => setDateRange(e.target.value || 'todos')}
+                    className="w-[160px] pl-10 cursor-pointer bg-black/50 border-brand-gold/20 text-white focus-visible:ring-brand-gold/40 focus-visible:border-brand-gold rounded-xl h-11 [&::-webkit-calendar-picker-indicator]:opacity-0"
+                    title="Filtrar por data específica"
+                    style={{ colorScheme: 'dark' }}
+                  />
+                </div>
 
-              <Select value={tipo} onValueChange={(v) => setTipo(v as 'todos' | ListaTipo)}>
-                <SelectTrigger className="w-[160px] bg-black/50 border-brand-gold/20 text-white focus:ring-brand-gold/40 focus:border-brand-gold rounded-xl h-11">
-                  <SelectValue placeholder="Tipo" />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-950 border-brand-gold/20 text-white rounded-xl">
-                  {TIPO_OPTIONS.map((o) => (
-                    <SelectItem key={o.value} value={o.value} className="focus:bg-brand-gold/20 focus:text-white cursor-pointer">{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <Select value={status} onValueChange={(v) => setStatus(v as 'todos' | LeadStatus)}>
+                  <SelectTrigger className="w-[150px] bg-black/50 border-brand-gold/20 text-white focus:ring-brand-gold/40 focus:border-brand-gold rounded-xl h-11">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-950 border-brand-gold/20 text-white rounded-xl">
+                    {STATUS_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className="focus:bg-brand-gold/20 focus:text-white cursor-pointer">{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={tipo} onValueChange={(v) => setTipo(v as 'todos' | ListaTipo)}>
+                  <SelectTrigger className="w-[150px] bg-black/50 border-brand-gold/20 text-white focus:ring-brand-gold/40 focus:border-brand-gold rounded-xl h-11">
+                    <SelectValue placeholder="Tipo" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-950 border-brand-gold/20 text-white rounded-xl">
+                    {TIPO_OPTIONS.map((o) => (
+                      <SelectItem key={o.value} value={o.value} className="focus:bg-brand-gold/20 focus:text-white cursor-pointer">{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Action bar */}
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                {hasActiveFilters && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    className="h-8 px-3 text-zinc-400 hover:text-white hover:bg-zinc-800 font-medium text-xs flex items-center gap-1.5"
+                  >
+                    <X size={13} />
+                    Limpar filtros
+                  </Button>
+                )}
+                <span className="text-xs text-zinc-600 font-medium">
+                  {totalCount} lista{totalCount !== 1 ? 's' : ''} encontrada{totalCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setAutoRefresh(v => !v)}
+                  title={autoRefresh ? 'Desativar auto-refresh (30s)' : 'Ativar auto-refresh (30s)'}
+                  className={`flex items-center gap-1.5 h-8 px-3 rounded-lg text-xs font-bold uppercase tracking-wider border transition-all ${
+                    autoRefresh
+                      ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
+                      : 'bg-black/40 border-white/10 text-zinc-500 hover:text-zinc-300 hover:border-white/20'
+                  }`}
+                >
+                  {autoRefresh && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+                  <Zap size={12} />
+                  {autoRefresh ? 'Live' : 'Auto'}
+                </button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => { loadListas(); loadStats() }}
+                  className="h-8 px-3 border-white/10 text-zinc-400 hover:text-white hover:bg-zinc-800 font-medium text-xs flex items-center gap-1.5 bg-transparent"
+                >
+                  <RefreshCw size={13} />
+                  Atualizar
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={isExporting}
+                  onClick={exportCSV}
+                  className="h-8 px-3 bg-brand-gold/10 hover:bg-brand-gold/20 text-brand-gold border border-brand-gold/30 font-bold text-xs flex items-center gap-1.5 uppercase tracking-wider"
+                >
+                  <Download size={13} />
+                  {isExporting ? 'Exportando...' : 'Exportar CSV'}
+                </Button>
+              </div>
             </div>
           </div>
 
@@ -347,7 +517,7 @@ export default function PainelControle() {
                         <div className="text-sm font-medium text-zinc-400 flex items-center gap-2">
                           <span className="text-brand-gold/70">✆</span> {formatPhoneBR(p.telefone)}
                         </div>
-                        <div className="text-sm text-zinc-500 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <div className="text-sm text-zinc-500 mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                           <span className="bg-black/40 px-2.5 py-1 rounded-md text-xs font-semibold text-zinc-300 border border-white/5">
                             {p.total_convidados} convidado{p.total_convidados !== 1 ? 's' : ''}
                           </span>
@@ -355,6 +525,11 @@ export default function PainelControle() {
                             <span className="flex items-center gap-1.5 text-xs font-medium text-brand-gold/70">
                               <Calendar size={13} />
                               Para: {p.data_evento.split('-').reverse().join('/')}
+                            </span>
+                          )}
+                          {p.fonte_lead && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-purple-400/80 bg-purple-500/10 border border-purple-500/20 px-2 py-0.5 rounded-full">
+                              {p.fonte_lead}
                             </span>
                           )}
                         </div>

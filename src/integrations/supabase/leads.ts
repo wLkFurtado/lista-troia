@@ -299,6 +299,129 @@ export async function updateConvidadoStatus(params: {
 }
 
 /**
+ * Busca todas as listas para exportação (sem paginação).
+ */
+export async function fetchAllListasForExport(params: {
+  search?: string;
+  status?: LeadStatus | "todos";
+  tipo?: ListaTipo | "todos";
+  dateRange?: string;
+}): Promise<{ data: ListaRow[]; error: unknown }> {
+  const {
+    search = "",
+    status = "todos",
+    tipo = "todos",
+    dateRange = "todos",
+  } = params;
+
+  let query = supabase
+    .from("listas")
+    .select("*, lista_convidados(count)");
+
+  if (status !== "todos") query = query.eq("status", status);
+  if (tipo !== "todos") query = query.eq("tipo", tipo);
+
+  const toISODateYMD = (d: Date) => {
+    const ano = d.getFullYear();
+    const mes = (d.getMonth() + 1).toString().padStart(2, '0');
+    const dia = d.getDate().toString().padStart(2, '0');
+    return `${ano}-${mes}-${dia}`;
+  };
+
+  if (dateRange && dateRange !== "todos") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateRange)) {
+      query = query.eq("data_evento", dateRange);
+    } else {
+      const now = new Date();
+      switch (dateRange) {
+        case "hoje":
+          query = query.eq("data_evento", toISODateYMD(now));
+          break;
+        case "ontem": {
+          const yesterday = new Date(now);
+          yesterday.setDate(now.getDate() - 1);
+          query = query.eq("data_evento", toISODateYMD(yesterday));
+          break;
+        }
+        case "7dias": {
+          const d = new Date(now);
+          d.setDate(now.getDate() - 7);
+          query = query.gte("data_evento", toISODateYMD(d));
+          break;
+        }
+      }
+    }
+  }
+
+  if (search.trim()) {
+    const q = search.trim();
+    const digits = q.replace(/\D/g, "");
+
+    const { data: guestsListIds } = await supabase
+      .from('lista_convidados')
+      .select('lista_id')
+      .ilike('nome', `%${q}%`);
+
+    const matchingIds = guestsListIds?.map(g => g.lista_id) || [];
+    const inFilter = matchingIds.length > 0 ? `,id.in.(${matchingIds.join(',')})` : '';
+
+    if (digits.length > 0) {
+      query = query.or(`nome_responsavel.ilike.%${q}%,telefone.ilike.%${digits}%${inFilter}`);
+    } else if (matchingIds.length > 0) {
+      query = query.or(`nome_responsavel.ilike.%${q}%${inFilter}`);
+    } else {
+      query = query.ilike("nome_responsavel", `%${q}%`);
+    }
+  }
+
+  query = query.order("data_cadastro", { ascending: false });
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[Supabase] Erro ao exportar listas:", error);
+    return { data: [], error };
+  }
+
+  const rows: ListaRow[] = (data ?? []).map((row: Record<string, unknown>) => {
+    const convidadosArr = row.lista_convidados as Array<{ count: number }> | undefined;
+    return {
+      id: row.id as string,
+      tipo: row.tipo as ListaTipo,
+      nome_responsavel: row.nome_responsavel as string,
+      telefone: row.telefone as string,
+      fonte_lead: row.fonte_lead as string | null,
+      data_cadastro: row.data_cadastro as string,
+      status: row.status as LeadStatus,
+      data_entrada: row.data_entrada as string | null,
+      data_evento: row.data_evento as string | null,
+      total_convidados: convidadosArr?.[0]?.count ?? 0,
+    };
+  });
+
+  return { data: rows, error: null };
+}
+
+/**
+ * Confirma todos os convidados pendentes de uma lista.
+ */
+export async function confirmAllConvidados(listaId: string) {
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("lista_convidados")
+    .update({ status: 'entrou', data_entrada: now })
+    .eq("lista_id", listaId)
+    .eq("status", "aguardando");
+
+  if (error) {
+    console.error("[Supabase] Erro ao confirmar todos os convidados:", error);
+    return { error };
+  }
+
+  return { error: null };
+}
+
+/**
  * Busca estatísticas de listas.
  */
 export async function fetchListaStats() {
