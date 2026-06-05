@@ -370,6 +370,19 @@ export default function PainelControle() {
           <GradientText className="text-2xl sm:text-4xl md:text-5xl mt-2 tracking-tight">PAINEL DE CONTROLE</GradientText>
         </header>
 
+        <Tabs defaultValue="listas" className="w-full">
+          <TabsList className="mb-6 bg-zinc-950/70 border border-brand-gold/20 rounded-xl">
+            <TabsTrigger value="listas" className="data-[state=active]:bg-brand-gold data-[state=active]:text-black uppercase text-xs font-bold tracking-wider">Listas</TabsTrigger>
+            <TabsTrigger value="bloqueadas" className="data-[state=active]:bg-brand-gold data-[state=active]:text-black uppercase text-xs font-bold tracking-wider">Datas sem lista</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="bloqueadas">
+            <section className="bg-zinc-950/70 backdrop-blur-2xl border border-brand-gold/20 rounded-3xl p-5 md:p-8 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+              <DatasBloqueadasPanel />
+            </section>
+          </TabsContent>
+
+          <TabsContent value="listas">
         <section className="bg-zinc-950/70 backdrop-blur-2xl border border-brand-gold/20 rounded-3xl p-5 md:p-8 shadow-[0_0_40px_rgba(0,0,0,0.5)]">
           {/* Toolbar: Filters + Actions */}
           <div className="flex flex-col gap-5 mb-8">
