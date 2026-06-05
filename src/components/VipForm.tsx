@@ -317,10 +317,10 @@ export const VipForm: React.FC = () => {
                   key={dataOption.getTime()}
                   onClick={() => {
                     if (isBlocked) {
-                      const ok = window.confirm(
-                        '⚠ Não haverá lista neste dia.\n\nTem certeza que quer continuar mesmo assim? Sua lista pode não ser válida.'
-                      );
-                      if (!ok) return;
+                      toast.error('Não haverá lista neste dia. Escolha outra data.', {
+                        style: { background: '#2a0a0a', color: '#fca5a5', border: '1px solid #ef4444' }
+                      });
+                      return;
                     }
                     handleDataNext(iso);
                   }}
