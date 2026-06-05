@@ -3,6 +3,32 @@ import { supabase } from "@/integrations/supabase/client";
 import type { ListaTipo, LeadStatus } from "@/types/lead";
 
 // ==========================================
+// DATAS BLOQUEADAS
+// ==========================================
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const datasBloqueadasTable = () => (supabase as any).from("datas_bloqueadas");
+
+export async function fetchDatasBloqueadas(): Promise<string[]> {
+  const { data, error } = await datasBloqueadasTable().select("data").order("data");
+  if (error) {
+    console.error("[Supabase] Erro ao buscar datas bloqueadas:", error);
+    return [];
+  }
+  return (data ?? []).map((r: { data: string }) => r.data);
+}
+
+export async function addDataBloqueada(data: string) {
+  const { error } = await datasBloqueadasTable().insert([{ data }]);
+  return { error };
+}
+
+export async function removeDataBloqueada(data: string) {
+  const { error } = await datasBloqueadasTable().delete().eq("data", data);
+  return { error };
+}
+
+// ==========================================
 // LISTAS (novo sistema)
 // ==========================================
 
