@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useUTM } from '@/hooks/useUTM';
 import type { ListaTipo } from '@/types/lead';
-import { insertListaComConvidados, checkDuplicatePhone } from '@/integrations/supabase/leads';
-import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight, Check } from 'lucide-react';
+import { insertListaComConvidados, checkDuplicatePhone, fetchDatasBloqueadas } from '@/integrations/supabase/leads';
+import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 
 function applyPhoneMask(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
