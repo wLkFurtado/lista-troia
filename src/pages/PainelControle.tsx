@@ -627,6 +627,8 @@ export default function PainelControle() {
             </div>
           )}
         </section>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   )
