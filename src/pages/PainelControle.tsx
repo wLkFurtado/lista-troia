@@ -17,6 +17,8 @@ import {
 } from '@/integrations/supabase/leads'
 import { Logo } from '@/components/Logo'
 import { GradientText } from '@/components/GradientText'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { DatasBloqueadasPanel } from '@/components/DatasBloqueadasPanel'
 
 function formatPhoneBR(phone: string) {
   const digits = phone.replace(/\D/g, '')
