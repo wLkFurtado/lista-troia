@@ -565,6 +565,24 @@ export type Database = {
           },
         ]
       }
+      datas_bloqueadas: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+        }
+        Relationships: []
+      }
       equipment_loans: {
         Row: {
           created_at: string | null
