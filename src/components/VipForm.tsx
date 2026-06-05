@@ -67,7 +67,12 @@ export const VipForm: React.FC = () => {
   const [dataEvento, setDataEvento] = useState<string>('');
   const [inputMode, setInputMode] = useState<InputMode>('individual');
   const [textoColar, setTextoColar] = useState('');
+  const [datasBloqueadas, setDatasBloqueadas] = useState<string[]>([]);
   const utm = useUTM();
+
+  useEffect(() => {
+    fetchDatasBloqueadas().then(setDatasBloqueadas);
+  }, []);
 
   const tipoLabel = tipo === 'aniversario' ? 'Aniversariante' : 'Responsável';
 
