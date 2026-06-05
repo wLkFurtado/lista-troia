@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useUTM } from '@/hooks/useUTM';
 import type { ListaTipo } from '@/types/lead';
-import { insertListaComConvidados, checkDuplicatePhone } from '@/integrations/supabase/leads';
-import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight, Check } from 'lucide-react';
+import { insertListaComConvidados, checkDuplicatePhone, fetchDatasBloqueadas } from '@/integrations/supabase/leads';
+import { X, Plus, PartyPopper, Cake, ArrowLeft, Loader2, CalendarDays, Crown, CheckCircle2, ChevronRight, Check, AlertTriangle } from 'lucide-react';
 
 function applyPhoneMask(value: string): string {
   const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -67,7 +67,12 @@ export const VipForm: React.FC = () => {
   const [dataEvento, setDataEvento] = useState<string>('');
   const [inputMode, setInputMode] = useState<InputMode>('individual');
   const [textoColar, setTextoColar] = useState('');
+  const [datasBloqueadas, setDatasBloqueadas] = useState<string[]>([]);
   const utm = useUTM();
+
+  useEffect(() => {
+    fetchDatasBloqueadas().then(setDatasBloqueadas);
+  }, []);
 
   const tipoLabel = tipo === 'aniversario' ? 'Aniversariante' : 'Responsável';
 
@@ -304,16 +309,37 @@ export const VipForm: React.FC = () => {
           </div>
 
           <div className="w-full max-w-[400px] flex flex-col gap-3 mt-2">
-            {getAvailableDates().map((dataOption) => (
-              <button
-                key={dataOption.getTime()}
-                onClick={() => handleDataNext(toISODate(dataOption))}
-                className="group w-full flex items-center gap-4 bg-[#111111] border border-[#2A2A2A] hover:border-brand-gold hover:bg-[#151515] text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-sm hover:shadow-[0_0_15px_rgba(218,165,32,0.1)]"
-              >
-                <CalendarDays size={20} className="text-gray-500 group-hover:text-brand-gold transition-colors" />
-                <span className="text-left flex-1 tracking-wide">{formatDateLabel(dataOption)}</span>
-              </button>
-            ))}
+            {getAvailableDates().map((dataOption) => {
+              const iso = toISODate(dataOption);
+              const isBlocked = datasBloqueadas.includes(iso);
+              return (
+                <button
+                  key={dataOption.getTime()}
+                  onClick={() => {
+                    if (isBlocked) {
+                      const ok = window.confirm(
+                        '⚠ Não haverá lista neste dia.\n\nTem certeza que quer continuar mesmo assim? Sua lista pode não ser válida.'
+                      );
+                      if (!ok) return;
+                    }
+                    handleDataNext(iso);
+                  }}
+                  className={`group w-full flex items-center gap-4 border font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-sm ${
+                    isBlocked
+                      ? 'bg-red-950/30 border-red-500/40 text-red-200 hover:border-red-500/70'
+                      : 'bg-[#111111] border-[#2A2A2A] hover:border-brand-gold hover:bg-[#151515] text-white hover:shadow-[0_0_15px_rgba(218,165,32,0.1)]'
+                  }`}
+                >
+                  <CalendarDays size={20} className={isBlocked ? 'text-red-400' : 'text-gray-500 group-hover:text-brand-gold transition-colors'} />
+                  <span className={`text-left flex-1 tracking-wide ${isBlocked ? 'line-through opacity-80' : ''}`}>{formatDateLabel(dataOption)}</span>
+                  {isBlocked && (
+                    <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-red-300 bg-red-500/15 border border-red-500/30 px-2 py-1 rounded-full">
+                      <AlertTriangle size={12} /> Sem lista
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
