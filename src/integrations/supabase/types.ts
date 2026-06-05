@@ -1636,6 +1636,26 @@ export type Database = {
           seats_remaining: number
         }[]
       }
+      get_reservations_status_by_period: {
+        Args: { target_date: string }
+        Returns: {
+          capacity: number
+          reservation_date: string
+          seats_booked_noite: number
+          seats_booked_tarde: number
+          seats_booked_total: number
+          seats_remaining_noite: number
+          seats_remaining_tarde: number
+          seats_remaining_total: number
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_scope: { Args: { scope: string }; Returns: boolean }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
