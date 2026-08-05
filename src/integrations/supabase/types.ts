@@ -775,6 +775,399 @@ export type Database = {
           },
         ]
       }
+      ig_account_insights: {
+        Row: {
+          accounts_engaged: number | null
+          collected_at: string
+          id: string
+          impressions: number | null
+          lost_followers: number | null
+          new_followers: number | null
+          profile_visits: number | null
+          raw: Json | null
+          reach: number | null
+          snapshot_date: string
+          total_interactions: number | null
+          username: string
+          website_clicks: number | null
+        }
+        Insert: {
+          accounts_engaged?: number | null
+          collected_at?: string
+          id?: string
+          impressions?: number | null
+          lost_followers?: number | null
+          new_followers?: number | null
+          profile_visits?: number | null
+          raw?: Json | null
+          reach?: number | null
+          snapshot_date?: string
+          total_interactions?: number | null
+          username: string
+          website_clicks?: number | null
+        }
+        Update: {
+          accounts_engaged?: number | null
+          collected_at?: string
+          id?: string
+          impressions?: number | null
+          lost_followers?: number | null
+          new_followers?: number | null
+          profile_visits?: number | null
+          raw?: Json | null
+          reach?: number | null
+          snapshot_date?: string
+          total_interactions?: number | null
+          username?: string
+          website_clicks?: number | null
+        }
+        Relationships: []
+      }
+      ig_accounts: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          id: string
+          last_collected_at: string | null
+          last_error: string | null
+          password: string
+          status: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_collected_at?: string | null
+          last_error?: string | null
+          password: string
+          status?: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_collected_at?: string | null
+          last_error?: string | null
+          password?: string
+          status?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      ig_audience: {
+        Row: {
+          collected_at: string
+          dimension: string
+          id: string
+          key: string
+          snapshot_date: string
+          username: string
+          value: number
+        }
+        Insert: {
+          collected_at?: string
+          dimension: string
+          id?: string
+          key: string
+          snapshot_date?: string
+          username: string
+          value: number
+        }
+        Update: {
+          collected_at?: string
+          dimension?: string
+          id?: string
+          key?: string
+          snapshot_date?: string
+          username?: string
+          value?: number
+        }
+        Relationships: []
+      }
+      ig_comments: {
+        Row: {
+          analyzed_at: string | null
+          collected_at: string
+          comment_id: string
+          comment_username: string | null
+          demand_category: string | null
+          id: string
+          is_demand: boolean | null
+          like_count: number | null
+          media_pk: string
+          sentiment: string | null
+          text: string | null
+          timestamp: string | null
+          username: string
+        }
+        Insert: {
+          analyzed_at?: string | null
+          collected_at?: string
+          comment_id: string
+          comment_username?: string | null
+          demand_category?: string | null
+          id?: string
+          is_demand?: boolean | null
+          like_count?: number | null
+          media_pk: string
+          sentiment?: string | null
+          text?: string | null
+          timestamp?: string | null
+          username: string
+        }
+        Update: {
+          analyzed_at?: string | null
+          collected_at?: string
+          comment_id?: string
+          comment_username?: string | null
+          demand_category?: string | null
+          id?: string
+          is_demand?: boolean | null
+          like_count?: number | null
+          media_pk?: string
+          sentiment?: string | null
+          text?: string | null
+          timestamp?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      ig_media_metrics: {
+        Row: {
+          caption: string | null
+          collected_at: string
+          comment_count: number | null
+          id: string
+          impressions: number | null
+          like_count: number | null
+          media_code: string | null
+          media_pk: string
+          media_type: string | null
+          play_count: number | null
+          raw: Json | null
+          reach: number | null
+          save_count: number | null
+          share_count: number | null
+          snapshot_date: string
+          taken_at: string | null
+          thumbnail_url: string | null
+          username: string
+        }
+        Insert: {
+          caption?: string | null
+          collected_at?: string
+          comment_count?: number | null
+          id?: string
+          impressions?: number | null
+          like_count?: number | null
+          media_code?: string | null
+          media_pk: string
+          media_type?: string | null
+          play_count?: number | null
+          raw?: Json | null
+          reach?: number | null
+          save_count?: number | null
+          share_count?: number | null
+          snapshot_date?: string
+          taken_at?: string | null
+          thumbnail_url?: string | null
+          username: string
+        }
+        Update: {
+          caption?: string | null
+          collected_at?: string
+          comment_count?: number | null
+          id?: string
+          impressions?: number | null
+          like_count?: number | null
+          media_code?: string | null
+          media_pk?: string
+          media_type?: string | null
+          play_count?: number | null
+          raw?: Json | null
+          reach?: number | null
+          save_count?: number | null
+          share_count?: number | null
+          snapshot_date?: string
+          taken_at?: string | null
+          thumbnail_url?: string | null
+          username?: string
+        }
+        Relationships: []
+      }
+      ig_online_followers: {
+        Row: {
+          collected_at: string
+          hour: number
+          id: string
+          snapshot_date: string
+          username: string
+          value: number
+          weekday: number
+        }
+        Insert: {
+          collected_at?: string
+          hour: number
+          id?: string
+          snapshot_date?: string
+          username: string
+          value: number
+          weekday: number
+        }
+        Update: {
+          collected_at?: string
+          hour?: number
+          id?: string
+          snapshot_date?: string
+          username?: string
+          value?: number
+          weekday?: number
+        }
+        Relationships: []
+      }
+      ig_post_themes: {
+        Row: {
+          analyzed_at: string
+          media_pk: string
+          summary: string | null
+          theme: string
+          username: string
+        }
+        Insert: {
+          analyzed_at?: string
+          media_pk: string
+          summary?: string | null
+          theme: string
+          username: string
+        }
+        Update: {
+          analyzed_at?: string
+          media_pk?: string
+          summary?: string | null
+          theme?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      ig_profile_snapshots: {
+        Row: {
+          biography: string | null
+          collected_at: string
+          external_url: string | null
+          followers: number
+          following: number
+          full_name: string | null
+          id: string
+          media_count: number
+          profile_pic_url: string | null
+          snapshot_date: string
+          username: string
+        }
+        Insert: {
+          biography?: string | null
+          collected_at?: string
+          external_url?: string | null
+          followers?: number
+          following?: number
+          full_name?: string | null
+          id?: string
+          media_count?: number
+          profile_pic_url?: string | null
+          snapshot_date?: string
+          username: string
+        }
+        Update: {
+          biography?: string | null
+          collected_at?: string
+          external_url?: string | null
+          followers?: number
+          following?: number
+          full_name?: string | null
+          id?: string
+          media_count?: number
+          profile_pic_url?: string | null
+          snapshot_date?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      ig_raw_insights: {
+        Row: {
+          collected_at: string
+          id: string
+          kind: string
+          raw: Json
+          username: string
+        }
+        Insert: {
+          collected_at?: string
+          id?: string
+          kind: string
+          raw: Json
+          username: string
+        }
+        Update: {
+          collected_at?: string
+          id?: string
+          kind?: string
+          raw?: Json
+          username?: string
+        }
+        Relationships: []
+      }
+      ig_story_metrics: {
+        Row: {
+          collected_at: string
+          exits: number | null
+          id: string
+          impressions: number | null
+          raw: Json | null
+          reach: number | null
+          replies: number | null
+          story_pk: string
+          taken_at: string | null
+          taps_back: number | null
+          taps_forward: number | null
+          username: string
+        }
+        Insert: {
+          collected_at?: string
+          exits?: number | null
+          id?: string
+          impressions?: number | null
+          raw?: Json | null
+          reach?: number | null
+          replies?: number | null
+          story_pk: string
+          taken_at?: string | null
+          taps_back?: number | null
+          taps_forward?: number | null
+          username: string
+        }
+        Update: {
+          collected_at?: string
+          exits?: number | null
+          id?: string
+          impressions?: number | null
+          raw?: Json | null
+          reach?: number | null
+          replies?: number | null
+          story_pk?: string
+          taken_at?: string | null
+          taps_back?: number | null
+          taps_forward?: number | null
+          username?: string
+        }
+        Relationships: []
+      }
       institutional_contacts: {
         Row: {
           created_at: string | null
@@ -1128,12 +1521,15 @@ export type Database = {
           data_fim: string
           data_inicio: string
           descricao: string | null
+          direcao_id: string[] | null
+          editor_id: string[] | null
           filmmaker_id: string[] | null
           fotografo_id: string[] | null
           id: string
           jornalista_id: string[] | null
           local: string | null
           prioridade: Database["public"]["Enums"]["event_priority"] | null
+          producao_id: string[] | null
           recorrencia: Database["public"]["Enums"]["event_recurrence"] | null
           rede_id: string[] | null
           responsavel_id: string | null
@@ -1150,12 +1546,15 @@ export type Database = {
           data_fim: string
           data_inicio: string
           descricao?: string | null
+          direcao_id?: string[] | null
+          editor_id?: string[] | null
           filmmaker_id?: string[] | null
           fotografo_id?: string[] | null
           id?: string
           jornalista_id?: string[] | null
           local?: string | null
           prioridade?: Database["public"]["Enums"]["event_priority"] | null
+          producao_id?: string[] | null
           recorrencia?: Database["public"]["Enums"]["event_recurrence"] | null
           rede_id?: string[] | null
           responsavel_id?: string | null
@@ -1172,12 +1571,15 @@ export type Database = {
           data_fim?: string
           data_inicio?: string
           descricao?: string | null
+          direcao_id?: string[] | null
+          editor_id?: string[] | null
           filmmaker_id?: string[] | null
           fotografo_id?: string[] | null
           id?: string
           jornalista_id?: string[] | null
           local?: string | null
           prioridade?: Database["public"]["Enums"]["event_priority"] | null
+          producao_id?: string[] | null
           recorrencia?: Database["public"]["Enums"]["event_recurrence"] | null
           rede_id?: string[] | null
           responsavel_id?: string | null
@@ -1384,6 +1786,47 @@ export type Database = {
           },
         ]
       }
+      user_absences: {
+        Row: {
+          created_at: string | null
+          data_fim: string
+          data_inicio: string
+          id: string
+          observacao: string | null
+          tipo: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_fim: string
+          data_inicio: string
+          id?: string
+          observacao?: string | null
+          tipo: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_fim?: string
+          data_inicio?: string
+          id?: string
+          observacao?: string | null
+          tipo?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_absences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -1534,8 +1977,8 @@ export type Database = {
           created_at: string | null
           designer: string | null
           edicao: string | null
-          filmmaker: string | null
-          fotografo: string | null
+          filmmaker: string[] | null
+          fotografo: string[] | null
           id: string
           jornalistas: string[] | null
           notes: string | null
@@ -1549,8 +1992,8 @@ export type Database = {
           created_at?: string | null
           designer?: string | null
           edicao?: string | null
-          filmmaker?: string | null
-          fotografo?: string | null
+          filmmaker?: string[] | null
+          fotografo?: string[] | null
           id?: string
           jornalistas?: string[] | null
           notes?: string | null
@@ -1564,8 +2007,8 @@ export type Database = {
           created_at?: string | null
           designer?: string | null
           edicao?: string | null
-          filmmaker?: string | null
-          fotografo?: string | null
+          filmmaker?: string[] | null
+          fotografo?: string[] | null
           id?: string
           jornalistas?: string[] | null
           notes?: string | null
@@ -1592,20 +2035,6 @@ export type Database = {
           {
             foreignKeyName: "weekend_teams_edicao_fkey"
             columns: ["edicao"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "weekend_teams_filmmaker_fkey"
-            columns: ["filmmaker"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "weekend_teams_fotografo_fkey"
-            columns: ["fotografo"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
